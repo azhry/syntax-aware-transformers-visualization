@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&family=Cormorant+Garamond:ital,wght@1,600&display=swap');
+
+/* Main styles for MLP visualization */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #020617;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+:root {
+  --color-primary: #3b82f6;
+  --color-positive: #22c55e;
+  --color-negative: #ef4444;
+  --color-background: #020617;
+}
+
+.math-serif {
+  font-family: 'Cormorant Garamond', serif;
+}
+
+/* KaTeX overrides for dark theme */
+.katex {
+  color: #f8fafc !important;
+  font-size: 1.1em;
+}
+
+.katex .katex-html {
+  color: inherit;
+}

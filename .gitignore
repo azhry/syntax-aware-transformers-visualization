@@ -37,3 +37,12 @@ next-env.d.ts
 out/
 .env
 build
+.vscode
+.agents
+.gemini
+.opencode
+plans
+Encoding_Syntactic_Information_into_Transformers_for_Aspect-Based_Sentiment_Triplet_Extraction.pdf
+package-lock.json
+skills-lock.json
+PROMPT.md
