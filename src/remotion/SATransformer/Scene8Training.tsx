@@ -1,6 +1,6 @@
 import React from 'react';
 import { AbsoluteFill, useCurrentFrame } from 'remotion';
-import { BlockMath } from 'react-katex';
+import { BlockMath, InlineMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 import { COLORS } from './types';
 
@@ -12,7 +12,8 @@ export const Scene8Training: React.FC = () => {
 
   const titleOp = ap(f, 0, 10);
   const formulaOp = ap(f, 10, 12);
-  const curveP = ap(f, 24, 20);
+  const calculusOp = ap(f, 35, 15);
+  const curveP = ap(f, 60, 20);
 
   // Simulated loss curve
   const CURVE_PTS = 50;
@@ -23,7 +24,7 @@ export const Scene8Training: React.FC = () => {
     return { t, loss };
   });
 
-  const SVG_W = 900, SVG_H = 360;
+  const SVG_W = 900, SVG_H = 320;
   const PAD = { l: 70, r: 40, t: 20, b: 60 };
   const iw = SVG_W - PAD.l - PAD.r;
   const ih = SVG_H - PAD.t - PAD.b;
@@ -36,55 +37,56 @@ export const Scene8Training: React.FC = () => {
   const curPt = pts[Math.min(curveVisible, CURVE_PTS - 1)];
 
   return (
-    <AbsoluteFill style={{ backgroundColor: COLORS.background, padding: '44px 120px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 28, alignItems: 'center' }}>
-      <div style={{ opacity: titleOp, fontSize: 52, fontWeight: 800, color: COLORS.primaryLight, alignSelf: 'flex-start' }}>Training Objective</div>
+    <AbsoluteFill style={{ backgroundColor: COLORS.background, padding: '44px 100px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'center' }}>
+      <div style={{ opacity: titleOp, fontSize: 52, fontWeight: 900, color: COLORS.primaryLight, alignSelf: 'flex-start' }}>Training Objective</div>
 
       {/* Formula */}
-      <div style={{ opacity: formulaOp, background: COLORS.surface, borderRadius: 14, padding: '20px 48px', border: `1px solid ${COLORS.primary}44`, width: '100%', maxWidth: 900 }}>
-        <div style={{ fontSize: 17, color: COLORS.textMuted, marginBottom: 8 }}>Cross-Entropy Loss over all samples, word pairs, and tag types:</div>
-        <BlockMath math="\mathcal{L}(\theta) = \sum_{\varphi} \sum_{i=1}^{n} \sum_{j=1}^{n} Y^{(\varphi)}_{ij} \log\!\left(p^{(\varphi), \top}_{ij} \mid \theta\right)" />
-        <div style={{ display: 'flex', gap: 32, marginTop: 8, fontSize: 18 }}>
-          {[
-            { t: 'Y^{(\\varphi)}_{ij}', d: '= gold label', c: COLORS.positive },
-            { t: 'p^{(\\varphi),\\top}_{ij}', d: '= model prediction', c: COLORS.primary },
-            { t: '\\varphi', d: '= tag type (A, O, Pos, Neg, Neu)', c: COLORS.aspect },
-          ].map((item, i) => (
-            <div key={i} style={{ fontSize: 17, color: item.c }}>
-              <span style={{ fontFamily: 'JetBrains Mono, monospace' }}>{item.d}</span>
+      <div style={{ opacity: formulaOp, background: COLORS.surface, borderRadius: 16, padding: '20px 48px', border: `1px solid ${COLORS.primary}44`, width: '100%', maxWidth: 1000 }}>
+        <div style={{ fontSize: 16, color: COLORS.textMuted, marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 900 }}>Joint Cross-Entropy Loss</div>
+        <BlockMath math="\mathcal{L}(\theta) = -\sum_{\varphi \in \Phi} \sum_{i,j=1}^{n} Y^{(\varphi)}_{ij} \log\!\left(p^{(\varphi)}_{ij}\right)" />
+
+        {calculusOp > 0 && (
+          <div style={{ opacity: calculusOp, marginTop: 24, padding: '16px 24px', background: 'rgba(0,0,0,0.85)', borderRadius: 12, border: `2px solid ${COLORS.positive}44`, color: COLORS.positive }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: COLORS.positive, marginBottom: 8, textTransform: 'uppercase' }}>LITERAL EVALUATION (Single Word-Pair)</div>
+            <div style={{ fontSize: 18 }}>
+              <InlineMath math="-\left[ 1(Y_{ij}) \cdot \log(0.88) \right] - \left[ 0 \cdot \log(0.02) \right] \dots = 0.128" />
             </div>
-          ))}
-        </div>
+            <div style={{ fontSize: 13, color: COLORS.textMuted, marginTop: 8, fontWeight: 700 }}>
+              Correct prediction maximizes probability <InlineMath math="p_{ij}" /> where <InlineMath math="Y_{ij}=1" />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Loss curve */}
-      <div style={{ opacity: ap(f, 24, 10) }}>
-        <div style={{ fontSize: 18, color: COLORS.textMuted, marginBottom: 8 }}>Training loss over epochs (simulated):</div>
+      <div style={{ opacity: ap(f, 60, 10), marginTop: 20 }}>
+        <div style={{ fontSize: 18, color: COLORS.textMuted, marginBottom: 12, fontWeight: 700 }}>Stochastic Gradient Descent Flow:</div>
         <svg width={SVG_W} height={SVG_H}>
           {/* Axes */}
           <line x1={PAD.l} y1={PAD.t} x2={PAD.l} y2={PAD.t + ih} stroke={COLORS.textMuted} strokeWidth={2} opacity={0.5} />
           <line x1={PAD.l} y1={PAD.t + ih} x2={PAD.l + iw} y2={PAD.t + ih} stroke={COLORS.textMuted} strokeWidth={2} opacity={0.5} />
-          <text x={PAD.l - 8} y={PAD.t + ih / 2} textAnchor="middle" fill={COLORS.textMuted} fontSize={14} transform={`rotate(-90, ${PAD.l - 8}, ${PAD.t + ih / 2})`}>Loss</text>
-          <text x={PAD.l + iw / 2} y={PAD.t + ih + 40} textAnchor="middle" fill={COLORS.textMuted} fontSize={14}>Epoch →</text>
+          <text x={PAD.l - 40} y={PAD.t + ih / 2} textAnchor="middle" fill={COLORS.textMuted} fontSize={14} fontWeight={900} transform={`rotate(-90, ${PAD.l - 40}, ${PAD.t + ih / 2})`}>LOSS</text>
+          <text x={PAD.l + iw / 2} y={PAD.t + ih + 40} textAnchor="middle" fill={COLORS.textMuted} fontSize={14} fontWeight={900}>TRAINING EPOCHS</text>
 
           {/* Grid */}
           {[0.5, 1.0, 1.5, 2.0, 2.5].map(l => (
             <g key={l}>
               <line x1={PAD.l - 6} y1={toY(l)} x2={PAD.l + iw} y2={toY(l)} stroke={COLORS.textMuted} strokeWidth={0.5} opacity={0.2} strokeDasharray="6,4" />
-              <text x={PAD.l - 10} y={toY(l)} textAnchor="end" dominantBaseline="middle" fill={COLORS.textMuted} fontSize={13}>{l}</text>
+              <text x={PAD.l - 12} y={toY(l)} textAnchor="end" dominantBaseline="middle" fill={COLORS.textMuted} fontSize={13} fontWeight={700}>{l}</text>
             </g>
           ))}
 
           {/* Glow */}
-          <path d={pathD} fill="none" stroke={COLORS.primary} strokeWidth={8} opacity={0.07} />
+          <path d={pathD} fill="none" stroke={COLORS.primary} strokeWidth={10} opacity={0.1} />
           {/* Curve */}
-          {curveP > 0 && <path d={pathD} fill="none" stroke={COLORS.primary} strokeWidth={3} strokeLinecap="round" opacity={0.9} />}
+          {curveP > 0 && <path d={pathD} fill="none" stroke={COLORS.primary} strokeWidth={4} strokeLinecap="round" strokeLinejoin="round" opacity={0.9} />}
 
           {/* Current marker */}
           {curveP > 0.02 && (
             <g>
-              <circle cx={toX(curPt.t)} cy={toY(curPt.loss)} r={8} fill={COLORS.positive} />
-              <rect x={toX(curPt.t) + 12} y={toY(curPt.loss) - 18} width={110} height={36} rx={6} fill={COLORS.surface} stroke={`${COLORS.positive}88`} strokeWidth={1} />
-              <text x={toX(curPt.t) + 67} y={toY(curPt.loss)} textAnchor="middle" dominantBaseline="middle" fill={COLORS.positive} fontSize={16} fontWeight="bold">
+              <circle cx={toX(curPt.t)} cy={toY(curPt.loss)} r={10} fill={COLORS.positive} />
+              <rect x={toX(curPt.t) + 16} y={toY(curPt.loss) - 20} width={120} height={40} rx={8} fill={COLORS.surface} stroke={`${COLORS.positive}88`} strokeWidth={2} />
+              <text x={toX(curPt.t) + 76} y={toY(curPt.loss)} textAnchor="middle" dominantBaseline="middle" fill={COLORS.positive} fontSize={18} fontWeight="900">
                 L = {curPt.loss.toFixed(3)}
               </text>
             </g>

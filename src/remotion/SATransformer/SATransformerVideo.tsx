@@ -12,21 +12,18 @@ import { Scene7Inference } from './Scene7Inference';
 import { Scene8Training } from './Scene8Training';
 import { Scene9Results } from './Scene9Results';
 
-// ~60 seconds total at 30fps = 1800 frames
+// ~75 seconds total at 30fps = 2250 frames
 const DUR = {
   INTRO: { start: 0, d: 90 },  // 3s
   ENCODER: { start: 90, d: 180 },  // 6s
   DEP: { start: 270, d: 240 },  // 8s
-  AEA: { start: 510, d: 600 },  // 20s  (6 sub-scenes, 100f each)
-  LAYERS: { start: 1110, d: 270 },  // 9s
-  DIST: { start: 1380, d: 120 },  // 4s
-  INFER: { start: 1500, d: 210 },  // 7s
-  TRAIN: { start: 1710, d: 90 },  // 3s
-  RESULTS: { start: 1800, d: 120 },  // 4s  total: 1920 frames
+  AEA: { start: 510, d: 600 },  // 20s
+  LAYERS: { start: 1110, d: 600 },  // 20s (Extended to slow down calculations)
+  DIST: { start: 1710, d: 120 },  // 4s
+  INFER: { start: 1830, d: 210 },  // 7s
+  TRAIN: { start: 2040, d: 90 },   // 3s
+  RESULTS: { start: 2130, d: 120 }, // 4s 
 };
-
-// Re-map AEA sub-scene timing to 600 frames (was 300)
-// SubA: 0-60, SubB: 60-145, SubC: 145-265, SubD: 265-415, SubE:415-505, SubF:505-600
 
 const BG = '#020617';
 

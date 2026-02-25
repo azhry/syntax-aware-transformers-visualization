@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, useCurrentFrame } from 'remotion';
+import { AbsoluteFill, useCurrentFrame, interpolate } from 'remotion';
 import { COLORS } from './types';
 
 const e3 = (x: number) => 1 - Math.pow(1 - x, 3);
@@ -18,32 +18,51 @@ const wCol = (t: 'n' | 'a' | 'o') => t === 'a' ? COLORS.aspect : t === 'o' ? COL
 
 export const Scene9Results: React.FC = () => {
   const f = useCurrentFrame();
-  const titleOp = ap(f, 0, 12);
-  const wordOp = (i: number) => ap(f, 8 + i * 1.5, 10);
-  const t1Op = ap(f, 30, 15);
-  const t2Op = ap(f, 50, 15);
-  const tagOp = ap(f, 65, 15);
+  const titleOp = ap(f, 0, 15);
+  const wordOp = (i: number) => ap(f, 10 + i * 2, 10);
+  const t1Op = ap(f, 40, 20);
+  const t2Op = ap(f, 65, 20);
+  const tagOp = ap(f, 90, 20);
 
   return (
-    <AbsoluteFill style={{ backgroundColor: COLORS.background, padding: '44px 120px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 32, alignItems: 'center' }}>
-      <div style={{ opacity: titleOp, fontSize: 52, fontWeight: 800, color: COLORS.primaryLight, alignSelf: 'center', textAlign: 'center' }}>
-        Extracted Sentiment Triplets
+    <AbsoluteFill style={{ backgroundColor: COLORS.background, padding: '60px 100px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 60, alignItems: 'center' }}>
+
+      <div style={{ opacity: titleOp, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+        <div style={{ fontSize: 64, fontWeight: 950, color: COLORS.primaryLight, letterSpacing: '-0.02em' }}>
+          Extracted Sentiment Triplets
+        </div>
+        <div style={{ fontSize: 18, color: COLORS.textMuted, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.2em' }}>
+          Final Unified Model Output
+        </div>
       </div>
 
-      {/* Sentence */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', alignItems: 'flex-end' }}>
+      {/* Sentence Decoration */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 15, justifyContent: 'center', alignItems: 'center', maxWidth: 1200, padding: '40px', background: 'rgba(255,255,255,0.03)', borderRadius: 32, border: '1px solid rgba(255,255,255,0.1)', boxShadow: 'inset 0 0 40px rgba(0,0,0,0.4)' }}>
         {WORDS.map((wd, i) => {
           const op = wordOp(i);
           const col = wCol(wd.t);
-          const hasBadge = wd.t !== 'n';
+          const isSpecial = wd.t !== 'n';
+
           return (
-            <div key={i} style={{ opacity: op, transform: `translateY(${(1 - op) * 16}px)`, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              {hasBadge && (
-                <div style={{ fontSize: 12, padding: '2px 8px', background: `${col}33`, border: `1px solid ${col}`, color: col, borderRadius: 99, marginBottom: 4, fontWeight: 700 }}>
-                  {wd.t === 'a' ? 'A' : 'O'}
+            <div key={i} style={{
+              opacity: op,
+              transform: `translateY(${(1 - op) * 20}px) scale(${0.9 + op * 0.1})`,
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              transition: 'all 0.4s ease'
+            }}>
+              {isSpecial && (
+                <div style={{
+                  fontSize: 10, padding: '4px 10px', background: col, color: '#000', borderRadius: 4, marginBottom: 8, fontWeight: 950,
+                  boxShadow: `0 0 15px ${col}66`
+                }}>
+                  {wd.t === 'a' ? 'ASPECT' : 'OPINION'}
                 </div>
               )}
-              <span style={{ fontSize: 44, fontWeight: wd.t !== 'n' ? 700 : 400, color: col }}>
+              <span style={{
+                fontSize: 48, fontWeight: isSpecial ? 900 : 400, color: isSpecial ? col : '#fff',
+                textShadow: isSpecial ? `0 0 20px ${col}44` : 'none',
+                fontFamily: isSpecial ? 'Inter' : 'Georgia'
+              }}>
                 {wd.w}
               </span>
             </div>
@@ -52,23 +71,38 @@ export const Scene9Results: React.FC = () => {
       </div>
 
       {/* Triplet cards */}
-      <div style={{ display: 'flex', gap: 36, width: '100%', justifyContent: 'center' }}>
+      <div style={{ display: 'flex', gap: 40, width: '100%', justifyContent: 'center' }}>
         {TRIPLETS.map((t, i) => {
           const tOp = i === 0 ? t1Op : t2Op;
           return (
-            <div key={i} style={{ opacity: tOp, transform: `translateY(${(1 - tOp) * 20}px)`, flex: 1, maxWidth: 560, background: COLORS.surface, border: `2px solid ${t.c}`, borderRadius: 20, padding: '24px 36px', boxShadow: `0 0 40px ${t.c}22` }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                <div style={{ fontSize: 20, color: COLORS.textMuted }}>Triplet {i + 1}</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', padding: '4px 18px', background: t.c, borderRadius: 99 }}>{t.s}</div>
+            <div key={i} style={{
+              opacity: tOp,
+              transform: `translateX(${(i === 0 ? -1 : 1) * (1 - tOp) * 40}px) scale(${0.95 + tOp * 0.05})`,
+              flex: 1, maxWidth: 600, background: 'rgba(15, 23, 42, 0.8)',
+              border: `3.5px solid ${t.c}`, borderRadius: 24, padding: '32px 48px',
+              boxShadow: `0 20px 60px rgba(0,0,0,0.5), 0 0 30px ${t.c}33`,
+              display: 'flex', flexDirection: 'column', gap: 24
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: 18, fontWeight: 900, color: COLORS.textMuted, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Triplet {i + 1} Result</div>
+                <div style={{
+                  fontSize: 20, fontWeight: 950, color: '#fff', padding: '6px 20px', background: t.c, borderRadius: 12,
+                  boxShadow: `0 0 20px ${t.c}66`
+                }}>
+                  {t.s.toUpperCase()}
+                </div>
               </div>
-              <div style={{ display: 'flex', gap: 8, fontSize: 26, alignItems: 'center' }}>
-                <span style={{ color: COLORS.textMuted }}>(</span>
-                <span style={{ color: COLORS.aspect, fontWeight: 700 }}>{t.a}</span>
-                <span style={{ color: COLORS.textMuted }}>,</span>
-                <span style={{ color: COLORS.opinion, fontWeight: 700 }}>{t.o}</span>
-                <span style={{ color: COLORS.textMuted }}>,</span>
-                <span style={{ color: t.c, fontWeight: 700 }}>{t.s}</span>
-                <span style={{ color: COLORS.textMuted }}>)</span>
+
+              <div style={{ height: 2, background: 'rgba(255,255,255,0.1)', width: '100%' }} />
+
+              <div style={{ display: 'flex', gap: 12, fontSize: 32, alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: COLORS.textMuted, opacity: 0.5 }}>⟨</span>
+                <span style={{ color: COLORS.aspect, fontWeight: 950 }}>{t.a}</span>
+                <span style={{ color: COLORS.textMuted, opacity: 0.3 }}>|</span>
+                <span style={{ color: COLORS.opinion, fontWeight: 950 }}>{t.o}</span>
+                <span style={{ color: COLORS.textMuted, opacity: 0.3 }}>|</span>
+                <span style={{ color: t.c, fontWeight: 950 }}>{t.s}</span>
+                <span style={{ color: COLORS.textMuted, opacity: 0.5 }}>⟩</span>
               </div>
             </div>
           );
@@ -76,8 +110,18 @@ export const Scene9Results: React.FC = () => {
       </div>
 
       {/* Final badge */}
-      <div style={{ opacity: tagOp, transform: `scale(${0.8 + tagOp * 0.2})`, background: `linear-gradient(135deg, ${COLORS.primary}44, #a78bfa44)`, border: `2px solid ${COLORS.primaryLight}88`, borderRadius: 16, padding: '16px 48px', fontSize: 26, fontWeight: 700, color: COLORS.primaryLight, textAlign: 'center' }}>
-        ✓ SA-Transformer: Syntax-Aware · Span-Level · End-to-End ASTE
+      <div style={{
+        opacity: tagOp,
+        transform: `translateY(${(1 - tagOp) * 30}px)`,
+        background: `linear-gradient(135deg, ${COLORS.primary}22, ${COLORS.aspect}22)`,
+        border: `2px solid ${COLORS.primaryLight}44`,
+        borderRadius: 24, padding: '24px 64px',
+        fontSize: 24, fontWeight: 900, color: COLORS.primaryLight, textAlign: 'center',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+        display: 'flex', alignItems: 'center', gap: 20
+      }}>
+        <div style={{ color: COLORS.positive }}> ✓ </div>
+        <div>SA-Transformer: Syntax-Aware · Span-Level · End-to-End ASTE</div>
       </div>
     </AbsoluteFill>
   );
