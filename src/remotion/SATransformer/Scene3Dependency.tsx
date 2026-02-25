@@ -8,17 +8,18 @@ const e3 = (x: number) => 1 - Math.pow(1 - x, 3);
 const ap = (f: number, s: number, d: number) => e3(Math.min(Math.max((f - s) / d, 0), 1));
 
 // Simplified 6-word version for clarity
-const WORDS = ['staff', 'was₁', 'courteous', 'food', 'was₂', 'terrible'];
-const TYPES: ('a' | 'n' | 'o' | 'a' | 'n' | 'o')[] = ['a', 'n', 'o', 'a', 'n', 'o'];
+const WORDS = ['staff', 'was₁', 'courteous', 'but', 'food', 'was₂', 'terrible'];
+const TYPES: string[] = ['a', 'n', 'o', 'c', 'a', 'n', 'o']; // aspect, noun/verb, opinion, conjunction
 const N = WORDS.length;
 
 // Edges: [src, tgt, label], 0-indexed into WORDS
 const EDGES: [number, number, string][] = [
   [0, 1, 'nsubj'],    // staff → was₁
   [2, 1, 'acomp'],    // courteous → was₁
-  [1, 4, 'conj'],     // was₁ → was₂  ← KEY EDGE
-  [3, 4, 'nsubj'],    // food → was₂
-  [5, 4, 'acomp'],    // terrible → was₂
+  [1, 5, 'conj'],     // was₁ → was₂  ← THE BRIDGE
+  [3, 5, 'cc'],       // but → was₂   ← Why it's adjacent!
+  [4, 5, 'nsubj'],    // food → was₂
+  [6, 5, 'acomp'],    // terrible → was₂
 ];
 
 const DEP_COLORS: Record<string, string> = {
@@ -52,12 +53,13 @@ export const Scene3Dependency: React.FC = () => {
   const WAS1 = { x: 220, y: 80 };
   const WAS2 = { x: 650, y: 80 };
   const POSITIONS: { x: number, y: number }[] = [
-    { x: 100, y: 500 }, // staff
+    { x: 80, y: 500 },  // staff
     WAS1,               // was₁
-    { x: 340, y: 500 }, // courteous
-    { x: 500, y: 500 }, // food
+    { x: 300, y: 500 }, // courteous
+    { x: 435, y: 400 }, // but
+    { x: 570, y: 500 }, // food
     WAS2,               // was₂
-    { x: 780, y: 500 }, // terrible
+    { x: 790, y: 500 }, // terrible
   ];
 
   const SVG_W = 740, SVG_H = 600;
@@ -212,7 +214,7 @@ export const Scene3Dependency: React.FC = () => {
             </div>
 
             <div style={{ marginTop: 10, padding: '8px 14px', background: `${COLORS.aspect}18`, border: `1px solid ${COLORS.aspect}44`, borderRadius: 8, fontSize: 24, color: COLORS.aspect, display: 'inline-block' }}>
-              ■ Orange = <strong>conj</strong> edges (was₁ ↔ was₂) — core challenge for AEA
+              ■ Orange = <strong>conj</strong> (was₁ ↔ was₂) & Purple = <strong>cc</strong> (but ↔ was₂)
             </div>
           </div>
         </div>
