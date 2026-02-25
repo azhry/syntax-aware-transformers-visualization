@@ -12,17 +12,17 @@ import { Scene7Inference } from './Scene7Inference';
 import { Scene8Training } from './Scene8Training';
 import { Scene9Results } from './Scene9Results';
 
-// ~75 seconds total at 30fps = 2250 frames
+// ~80 seconds total at 30fps = 2400 frames
 const DUR = {
   INTRO: { start: 0, d: 90 },  // 3s
-  ENCODER: { start: 90, d: 180 },  // 6s
-  DEP: { start: 270, d: 240 },  // 8s
-  AEA: { start: 510, d: 600 },  // 20s
-  LAYERS: { start: 1110, d: 600 },  // 20s (Extended to slow down calculations)
-  DIST: { start: 1710, d: 120 },  // 4s
-  INFER: { start: 1830, d: 210 },  // 7s
-  TRAIN: { start: 2040, d: 90 },   // 3s
-  RESULTS: { start: 2130, d: 120 }, // 4s 
+  ENCODER: { start: 90, d: 290 },  // 10s (Fast BiLSTM visualization - 10 frames per word)
+  DEP: { start: 380, d: 240 },  // 8s
+  AEA: { start: 620, d: 600 },  // 20s
+  LAYERS: { start: 1220, d: 600 },  // 20s (Extended to slow down calculations)
+  DIST: { start: 1820, d: 120 },  // 4s
+  INFER: { start: 1940, d: 210 },  // 7s
+  TRAIN: { start: 2150, d: 90 },   // 3s
+  RESULTS: { start: 2240, d: 120 }, // 4s 
 };
 
 const BG = '#020617';
