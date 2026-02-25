@@ -12,7 +12,7 @@ The visualization explores how transformers can evolve from "sequential-blind" m
 ## 📺 Result Preview
 
 <p align="center">
-  <video src="./out/SATransformerVideo.mp4" controls width="100%" style="max-width: 800px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);"></video>
+  <video src="https://raw.githubusercontent.com/azhry/syntax-aware-transformers-visualization/main/out/SATransformerVideo.mp4" controls width="100%" style="max-width: 800px; border-radius: 20px;"></video>
 </p>
 
 > **Full Video Download**: [`out/SATransformerVideo.mp4`](./out/SATransformerVideo.mp4)
