@@ -1,5 +1,5 @@
 import React from 'react';
-import { AbsoluteFill, useCurrentFrame, interpolate } from 'remotion';
+import { AbsoluteFill, useCurrentFrame } from 'remotion';
 import { InlineMath } from 'react-katex';
 import 'katex/dist/katex.min.css';
 import { COLORS } from './types';
@@ -7,214 +7,255 @@ import { COLORS } from './types';
 const e3 = (x: number) => 1 - Math.pow(1 - x, 3);
 const ap = (f: number, s: number, d: number) => e3(Math.min(Math.max((f - s) / d, 0), 1));
 
-const WORDS = ['The', 'vegetable', 'salad', 'was', 'well', 'done'];
-const N = WORDS.length;
-const WTYPES: ('n' | 'a' | 'o')[] = ['n', 'a', 'a', 'n', 'o', 'o'];
+const WORDS = ['The', 'staff', 'was', 'very', 'courteous', 'but', 'the', 'food', 'was', 'terrible'];
+const WTYPES: ('n' | 'a' | 'o')[] = ['n', 'a', 'n', 'o', 'o', 'n', 'n', 'a', 'n', 'o'];
 
-// Tag evolution stages: t=0 (RAW), t=1 (REFINED), t=2 (FINAL)
 const TAGS_STAGES: string[][][] = [
-  // t=0 (Initial Transformer prediction)
-  [
-    ['N', 'N', 'N', 'N', 'N', 'N'],
-    ['N', 'A', 'N', 'N', 'N', 'N'],
-    ['N', 'N', 'A', 'N', 'N', 'N'],
-    ['N', 'N', 'N', 'N', 'N', 'N'],
-    ['N', 'N', 'N', 'N', 'O', 'N'],
-    ['N', 'N', 'N', 'N', 'N', 'O'],
-  ],
-  // t=1 (Adjacency Refined - merging spans)
-  [
-    ['N', 'N', 'N', 'N', 'N', 'N'],
-    ['N', 'A', 'A', 'N', 'N', 'N'],
-    ['N', 'A', 'A', 'N', 'N', 'N'],
-    ['N', 'N', 'N', 'N', 'N', 'N'],
-    ['N', 'N', 'N', 'N', 'O', 'O'],
-    ['N', 'N', 'N', 'N', 'O', 'O'],
-  ],
-  // t=2 (Final corrected triplets)
-  [
-    ['N', 'N', 'N', 'N', 'N', 'N'],
-    ['N', 'A', 'A', 'N', 'N', 'N'],
-    ['N', 'A', 'A', 'N', 'N', 'N'],
-    ['N', 'N', 'N', 'N', 'N', 'N'],
-    ['N', 'N', 'N', 'N', 'O', 'O'],
-    ['N', 'N', 'N', 'N', 'O', 'O'],
-  ]
+  // t=0 (RAW)
+  Array.from({ length: 10 }, (_, r) =>
+    Array.from({ length: 10 }, (_, c) => {
+      if (r === c) { if (r === 1 || r === 7) return 'A'; if (r === 4 || r === 9) return 'O'; }
+      if (r === 1 && c === 4) return '+';
+      if (r === 7 && c === 9) return '-';
+      return 'N';
+    })
+  ),
+  // t=1 (REFINED)
+  Array.from({ length: 10 }, (_, r) =>
+    Array.from({ length: 10 }, (_, c) => {
+      if (r === c) { if (r === 1 || r === 7) return 'A'; if (r === 3 || r === 4 || r === 9) return 'O'; }
+      if (r === 1 && (c === 3 || c === 4)) return '+';
+      if (r === 7 && c === 9) return '-';
+      return 'N';
+    })
+  ),
+  // t=2 (FINAL)
+  Array.from({ length: 10 }, (_, r) =>
+    Array.from({ length: 10 }, (_, c) => {
+      if (r === c) { if (r === 1 || r === 7) return 'A'; if (r === 3 || r === 4 || r === 9) return 'O'; }
+      if (r === 1 && (c === 3 || c === 4)) return '+';
+      if (r === 7 && c === 9) return '-';
+      return 'N';
+    })
+  )
 ];
-
-const tagBg = (t: string) =>
-  t === 'A' ? `${COLORS.aspect}66` : t === 'O' ? `${COLORS.opinion}66` : '#1e293b';
-const tagBorder = (t: string) =>
-  t === 'A' ? COLORS.aspect : t === 'O' ? COLORS.opinion : '#334155';
-const wCol = (t: 'n' | 'a' | 'o') => t === 'a' ? COLORS.aspect : t === 'o' ? COLORS.opinion : COLORS.text;
 
 export const Scene7Inference: React.FC = () => {
   const f = useCurrentFrame();
 
-  // ── TIMING (Duration 210 frames) ──
+  const stage = f < 50 ? 0 : f < 220 ? 1 : 2;
+  const relF = f - 50;
+
+  // Dynamic Focus Logic for Stage 1
+  // Sequence: (1,4) Pos -> (7,9) Neg
+  const focusData = relF < 85 ? { r: 1, c: 4, label: '+', color: COLORS.positive } : { r: 7, c: 9, label: '-', color: COLORS.negative };
+  const targetR = focusData.r;
+  const targetC = focusData.c;
+
+  const stepOffset = relF < 85 ? relF : relF - 85;
+  const activeStep = Math.floor(stepOffset / 20);
+
   const titleOp = ap(f, 0, 15);
+  const gridOp = ap(f, 10, 20);
+  const mathOp = ap(f, 40, 15);
+  const finalTriOp = ap(f, 225, 20);
 
-  // Stages: Stage 0 (intro + t=0), Stage 1 (t=1 math), Stage 2 (t=2 result)
-  const stage = f < 40 ? 0 : f < 130 ? 1 : 2;
-  const relF = stage === 1 ? f - 40 : stage === 2 ? f - 130 : f;
-
-  const cellOp = (r: number, c: number) => ap(f, 10 + (r * N + c) * 1, 8);
-  const formulaOp = (i: number) => ap(f, 20 + i * 15, 15);
-  const calculusOp = ap(f, 50, 20);
-  const tripletOp = ap(f, 180, 20);
-
-  const CELL = 52;
+  const CELL = 54;
+  const MARGIN = 3;
   const LABEL = 110;
 
-  // Selected cell for calculus: (1,2) - "vegetable" x "salad"
-  const targetR = 1, targetC = 2;
-
-  const getEvaluationMath = (step: number) => {
-    // Stage 1 math for p^1_{1,2}
-    const c_12 = [0.22, 0.45, 0.08, 0.15, 0.10]; // Tag distribution {A, O, P, N, Neu}
-    const c_tilde = [0.65, 0.10, 0.05, 0.05, 0.15]; // Influence from {1,1}, {1,2}, {2,2}
-    const gate_w = 0.42;
-    const gamma = 0.38;
-
-    const bmax = (val: string) => `\\begin{bmatrix} ${val} \\end{bmatrix}`;
-    const v5 = (v: number[]) => bmax(v.map(x => x.toFixed(2)).join('\\\\ '));
-    const h5 = (v: number[]) => bmax(v.map(x => x.toFixed(2)).join(',\\, '));
-
-    const steps = [
-      `c^t_{1,2} = \\text{softmax}(W_c \\tilde{o}^t_{1,2} + b_c) = ${v5(c_12)}`,
-      `\\tilde{c}^t_{1,2} = W_o ${bmax('c^{t-1}_{1,1} \\\\ c^{t-1}_{0,2} \\\\ c^{t-1}_{0,1}')} = ${v5(c_tilde)}`,
-      `\\gamma^t = \\sigma(${gate_w}(W_p) \\cdot ${bmax('c^t_{ij} \\\\ \\tilde{c}^t_{ij}')} ) = ${gamma}`,
-      `p^t_{1,2} = ${gamma}(\\gamma^t) \\cdot c^t_{1,2} + (1-${gamma}) \\cdot \\tilde{c}^t_{1,2} = ${v5(c_12.map((val, i) => gamma * val + (1 - gamma) * c_tilde[i]))}`
-    ];
-    return steps[step] || '';
-  };
-
-  const formulas = [
-    { label: 'Tag Probability (Iteration t)', math: 'p^t_{ij} = \\gamma^t c^t_{ij} + (1 - \\gamma^t) \\tilde{c}^t_{ij}', color: COLORS.primaryLight },
-    { label: 'Adjacency Influence', math: '\\tilde{c}^t_{ij} = W_o [c^{t-1}_{i-1,j} : c^{t-1}_{i,j-1} : c^{t-1}_{i-1,j-1}]', color: COLORS.aspect },
-    { label: 'Adaptive Gate', math: '\\gamma^t = \\sigma(W_p [c^t_{ij} : \\tilde{c}^t_{ij}])', color: COLORS.opinion },
-    { label: 'Base Distribution', math: 'c^t_{ij} = \\text{softmax}(W_c \\tilde{o}^t_{ij} + b_c)', color: COLORS.textMuted },
-  ];
+  const wCol = (t: 'n' | 'a' | 'o') => t === 'a' ? COLORS.aspect : t === 'o' ? COLORS.opinion : COLORS.text;
+  const tagBg = (t: string) => t === 'A' ? `${COLORS.aspect}66` : t === 'O' ? `${COLORS.opinion}66` : t === '+' ? `${COLORS.positive}66` : t === '-' ? `${COLORS.negative}66` : '#1e293b';
+  const tagCol = (t: string) => t === 'A' ? COLORS.aspect : t === 'O' ? COLORS.opinion : t === '+' ? COLORS.positive : t === '-' ? COLORS.negative : '#334155';
 
   return (
-    <AbsoluteFill style={{ backgroundColor: COLORS.background, padding: '44px 80px', boxSizing: 'border-box', display: 'flex', flexDirection: 'row', gap: 60 }}>
-
-      {/* Left Column: Grid */}
-      <div style={{ flex: '1', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ opacity: titleOp, display: 'flex', alignItems: 'center', gap: 24, marginBottom: 32 }}>
-          <div style={{ fontSize: 44, fontWeight: 900, color: COLORS.primaryLight }}>Adjacency Inference</div>
-          <div style={{ fontSize: 16, background: `${COLORS.aspect}22`, color: COLORS.aspect, padding: '6px 16px', borderRadius: 99, border: `2px solid ${COLORS.aspect}44`, fontWeight: 800 }}>
-            {stage === 0 ? 'INITIAL (t=0)' : stage === 1 ? 'PROCESSING (t=1)' : 'FINALIZED (t=2)'}
+    <AbsoluteFill style={{ backgroundColor: COLORS.background, padding: '40px 80px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 30 }}>
+      {/* Header */}
+      <div style={{ opacity: titleOp, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          <div style={{ fontSize: 48, fontWeight: 950, color: COLORS.primaryLight }}>Refinement & Inference</div>
+          <div style={{ fontSize: 16, background: `${COLORS.aspect}22`, color: COLORS.aspect, padding: '6px 16px', borderRadius: 99, border: `2px solid ${COLORS.aspect}44`, fontWeight: 900 }}>
+            {stage === 0 ? 'STAGE 0: RAW OUTPUT' : stage === 1 ? 'STAGE 1: ITERATIVE REFINEMENT' : 'STAGE 2: FINAL TRIPLETS'}
           </div>
         </div>
+        <div style={{ fontSize: 18, color: COLORS.textMuted, fontWeight: 800 }}>ITERATION T = {stage}</div>
+      </div>
 
-        <div style={{ position: 'relative' }}>
-          {/* Header row */}
-          <div style={{ display: 'flex', marginBottom: 6 }}>
-            <div style={{ width: LABEL }} />
-            {WORDS.map((w, c) => (
-              <div key={c} style={{ width: CELL, height: 56, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '0 4px 10px' }}>
-                <div style={{ transform: 'rotate(-30deg)', transformOrigin: 'bottom center', fontSize: 13, color: wCol(WTYPES[c]), fontWeight: 900, whiteSpace: 'nowrap', opacity: cellOp(0, c) }}>
-                  {w}
+      <div style={{ display: 'flex', gap: 50, flex: 1, minHeight: 0 }}>
+        {/* Left: Corrected Matrix Alignment */}
+        <div style={{ flex: 1.3, opacity: gridOp, display: 'flex', flexDirection: 'column' }}>
+          <div style={{ position: 'relative' }}>
+            {/* Header row aligned with column centers */}
+            <div style={{ display: 'flex', height: 80, marginBottom: 4 }}>
+              <div style={{ width: LABEL }} />
+              {WORDS.map((w, i) => (
+                <div key={i} style={{ width: CELL + MARGIN, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                  <div style={{
+                    transform: 'rotate(-45deg) translateX(12px)',
+                    transformOrigin: 'bottom center',
+                    fontSize: 13,
+                    color: wCol(WTYPES[i]),
+                    fontWeight: 900,
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {w}
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            {/* Matrix Rows */}
+            {WORDS.map((rowW, r) => (
+              <div key={r} style={{ display: 'flex', marginBottom: MARGIN }}>
+                <div style={{ width: LABEL, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 20, fontSize: 13, color: wCol(WTYPES[r]), fontWeight: 900 }}>{rowW}</div>
+                {WORDS.map((_, c) => {
+                  const tag = TAGS_STAGES[stage][r][c];
+                  const isTarget = r === targetR && c === targetC;
+                  const isNeighbor = stage === 1 && isTarget && ((r === targetR - 1 && c === targetC) || (r === targetR && c === targetC - 1) || (r === targetR - 1 && c === targetC - 1));
+
+                  const currentHighlight = isTarget ? focusData.color : (isNeighbor ? COLORS.primary : 'transparent');
+                  const active = stage === 1 && (isTarget || isNeighbor);
+
+                  return (
+                    <div key={c} style={{
+                      width: CELL, height: CELL, marginRight: MARGIN, borderRadius: 8,
+                      background: active ? `${currentHighlight}33` : tagBg(tag),
+                      border: active ? `3px solid ${currentHighlight}` : `1.5px solid ${tagCol(tag)}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 900, color: '#fff',
+                      boxShadow: active ? `0 0 20px ${currentHighlight}66` : 'none',
+                      transform: active ? 'scale(1.08)' : 'scale(1)',
+                      transition: 'all 0.2s ease',
+                      position: 'relative'
+                    }}>
+                      {tag !== 'N' ? tag : ''}
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
-
-          {/* Data rows */}
-          {WORDS.map((rowWord, r) => (
-            <div key={r} style={{ display: 'flex', marginBottom: 2 }}>
-              <div style={{ width: LABEL, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 15, fontSize: 13, color: wCol(WTYPES[r]), fontWeight: 900, opacity: cellOp(r, 0) }}>
-                {rowWord}
-              </div>
-              {WORDS.map((_, c) => {
-                const tag = TAGS_STAGES[stage][r][c];
-                const op = cellOp(r, c);
-                const isTarget = r === targetR && c === targetC;
-                const isNeighbor = stage === 1 && ((r === targetR - 1 && c === targetC) || (r === targetR && c === targetC - 1) || (r === targetR - 1 && c === targetC - 1));
-
-                return (
-                  <div key={c} style={{
-                    opacity: op, width: CELL, height: CELL, marginRight: 2,
-                    background: isTarget && stage === 1 ? `${COLORS.aspect}22` : tagBg(tag),
-                    border: isTarget && stage === 1 ? `3.5px solid ${COLORS.aspect}` : `1.5px solid ${tagBorder(tag)}`,
-                    borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 18, fontWeight: 900, color: tag !== 'N' ? '#fff' : COLORS.textMuted,
-                    boxShadow: isTarget && stage === 1 ? `0 0 25px ${COLORS.aspect}` : (isNeighbor ? `0 0 15px ${COLORS.aspect}66` : 'none'),
-                    transform: isTarget && stage === 1 ? 'scale(1.1)' : (isNeighbor ? 'scale(1.05)' : 'scale(1)'),
-                    transition: 'all 0.4s ease'
-                  }}>
-                    {tag}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
 
           {/* Legend */}
-          <div style={{ marginTop: 40, background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '16px 20px', display: 'flex', gap: 24, border: '1px solid rgba(255,255,255,0.1)' }}>
-            {[
-              { l: 'A', d: 'Aspect', c: COLORS.aspect },
-              { l: 'O', d: 'Opinion', c: COLORS.opinion },
-              { l: 'Pos/Neg', d: 'Sentiment', c: COLORS.positive },
-              { l: 'N', d: 'None', c: COLORS.textMuted },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ background: `${item.c}33`, width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 4, color: item.c, fontWeight: 900 }}>{item.l[0]}</div>
-                <div style={{ fontSize: 13, color: COLORS.textMuted }}>{item.d}</div>
+          <div style={{ marginTop: 'auto', display: 'flex', gap: 30, background: 'rgba(255,255,255,0.03)', padding: '16px 24px', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)', width: 'fit-content' }}>
+            {[{ l: 'A', d: 'Aspect', c: COLORS.aspect }, { l: 'O', d: 'Opinion', c: COLORS.opinion }, { l: '+', d: 'Positive', c: COLORS.positive }, { l: '-', d: 'Negative', c: COLORS.negative }].map(item => (
+              <div key={item.l} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 22, height: 22, background: item.c, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 12, fontWeight: 900 }}>{item.l}</div>
+                <div style={{ fontSize: 13, color: COLORS.textMuted, fontWeight: 700 }}>{item.d}</div>
               </div>
             ))}
           </div>
         </div>
-      </div>
 
-      {/* Right Column: Mathematical Calculus */}
-      <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: 15, opacity: calculusOp }}>
-        <div style={{ fontSize: 24, fontWeight: 900, color: COLORS.textMuted, marginBottom: 10 }}>
-          REFINEMENT MATH <span style={{ color: COLORS.aspect }}>— Cell (1,2)</span>
-        </div>
-
-        {formulas.map((fo, i) => {
-          const isActive = stage === 1 && Math.floor(relF / 25) === 3 - i;
-
-          return (
-            <div key={i} style={{
-              opacity: formulaOp(i), transform: `translateX(${(1 - formulaOp(i)) * 24}px)`,
-              background: isActive ? 'rgba(255,255,255,0.08)' : 'rgba(15, 23, 42, 0.4)',
-              borderRadius: 14, padding: '12px 24px',
-              borderLeft: `10px solid ${fo.color}`,
-              transition: 'all 0.3s ease',
-              boxShadow: isActive ? `0 0 30px ${fo.color}22` : 'none'
-            }}>
-              <div style={{ fontSize: 10, color: fo.color, fontWeight: 900, marginBottom: 5, textTransform: 'uppercase' }}>{fo.label}</div>
-              <div style={{ fontSize: 16, color: '#fff' }}>
-                <InlineMath math={fo.math} />
-              </div>
-
-              {stage === 1 && (3 - i) === Math.floor(relF / 25) && (
-                <div style={{ marginTop: 10, padding: '10px 16px', background: 'rgba(0,0,0,0.85)', borderRadius: 10, border: `1.5px solid ${fo.color}44`, color: COLORS.positive, fontSize: 12, fontWeight: 800 }}>
-                  <InlineMath math={getEvaluationMath(3 - i)} />
-                </div>
-              )}
+        {/* Right: Literal Math & Inference Reasoning */}
+        <div style={{ flex: 1.1, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          {/* Dynamic Math Panel */}
+          <div style={{ opacity: mathOp, background: COLORS.surface, borderRadius: 24, padding: '30px', border: `1px solid ${focusData.color}44`, display: 'flex', flexDirection: 'column', gap: 15, transition: 'border 0.5s ease' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 900, color: COLORS.textMuted }}>CALCULATION TRACE <span style={{ color: focusData.color }}>— Cell ({targetR}, {targetC})</span></div>
+              <div style={{ fontSize: 12, color: focusData.color, fontWeight: 900, background: `${focusData.color}22`, padding: '4px 12px', borderRadius: 8 }}>{targetR === 1 ? 'Positive' : 'Negative'} Inference</div>
             </div>
-          );
-        })}
 
-        {/* Final Triplet Result */}
-        <div style={{ opacity: tripletOp, marginTop: 'auto', transform: `translateY(${(1 - tripletOp) * 20}px)`, background: `${COLORS.positive}15`, border: `4px solid ${COLORS.positive}66`, borderRadius: 18, padding: '24px' }}>
-          <div style={{ fontSize: 14, fontWeight: 900, color: COLORS.positive, marginBottom: 12, textTransform: 'uppercase' }}>✓ Extracting Final Triplet</div>
-          <div style={{ fontSize: 22, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ color: COLORS.textMuted }}>(</span>
-            <span style={{ color: COLORS.aspect, fontWeight: 950 }}>vegetable salad</span>
-            <span style={{ color: COLORS.textMuted }}>,</span>
-            <span style={{ color: COLORS.opinion, fontWeight: 950 }}>well done</span>
-            <span style={{ color: COLORS.textMuted }}>,</span>
-            <span style={{ color: '#fff', background: COLORS.positive, padding: '2px 14px', borderRadius: 99, fontSize: 16, fontWeight: 800 }}>Pos</span>
-            <span style={{ color: COLORS.textMuted }}>)</span>
+            {/* Source Data origin */}
+            <div style={{ padding: '15px', background: 'rgba(0,0,0,0.2)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ fontSize: 9, color: COLORS.textMuted, fontWeight: 900, marginBottom: 12, textAlign: 'center' }}>INPUT VECTORS (LITERAL)</div>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ height: 4, background: wCol(WTYPES[targetR]), marginBottom: 6, borderRadius: 2 }} />
+                  <div style={{ fontSize: 10, color: '#fff' }}>[{WORDS[targetR]}]</div>
+                  <div style={{ fontSize: 8, color: COLORS.textMuted }}>Semantic</div>
+                </div>
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ height: 4, background: wCol(WTYPES[targetC]), marginBottom: 6, borderRadius: 2 }} />
+                  <div style={{ fontSize: 10, color: '#fff' }}>[{WORDS[targetC]}]</div>
+                  <div style={{ fontSize: 8, color: COLORS.textMuted }}>Semantic</div>
+                </div>
+                <div style={{ flex: 1, textAlign: 'center' }}>
+                  <div style={{ height: 4, background: focusData.color, marginBottom: 6, borderRadius: 2 }} />
+                  <div style={{ fontSize: 10, color: '#fff' }}>[dist={targetR === 1 ? 4 : 1}]</div>
+                  <div style={{ fontSize: 8, color: COLORS.textMuted }}>Structural</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Steps */}
+            {[
+              { t: "1. Logit Computation (z)", m: `z = W [S_i : S_j : f_{dist}] + b`, d: "Merging features into raw scores." },
+              { t: "2. Base Distribution (c)", m: `c = \\text{Softmax}(z) = ${targetR === 1 ? '[0.82, 0.08, 0.10]' : '[0.12, 0.78, 0.10]'}`, d: "Converting z scores into a 100% distribution." },
+              { t: "3. Adjacency Influence (c~)", m: `\\tilde{c} = \\text{Agg}(N_{neighbors}) = ${targetR === 1 ? '[0.95, 0.02, 0.03]' : '[0.02, 0.94, 0.04]'}`, d: "Consensus from surrounding matrix cells." },
+              { t: "4. Adaptive Refinement (P)", m: `P = \\gamma c + (1-\\gamma) \\tilde{c}`, d: "Merging base (c) and neighbor (c~) predictions." },
+              { t: "5. Final Classification", m: `\\text{argmax}(P) \\implies [${focusData.label}]`, d: `Final result: ${targetR === 1 ? 'Positive' : 'Negative'}` }
+            ].map((step, i) => {
+              const op = ap(stepOffset, i * 18, 15);
+              const activeStep = Math.floor(stepOffset / 18);
+              const isActive = activeStep === i;
+              return (
+                <div key={i} style={{
+                  opacity: op, padding: '8px 15px', borderRadius: 12, borderLeft: `4px solid ${isActive ? focusData.color : COLORS.primary}`,
+                  background: isActive ? 'rgba(255,255,255,0.05)' : 'transparent',
+                  transform: isActive ? 'translateX(5px)' : 'translateX(0)',
+                  transition: 'all 0.3s ease'
+                }}>
+                  <div style={{ fontSize: 10, fontWeight: 900, color: COLORS.textMuted, marginBottom: 4 }}>{step.t}</div>
+                  <div style={{ fontSize: 13, color: isActive ? '#fff' : 'rgba(255,255,255,0.5)' }}><InlineMath math={step.m} /></div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Triplet Extraction Panel - Compact & Filled */}
+          <div style={{
+            opacity: finalTriOp,
+            background: 'rgba(16, 185, 129, 0.05)',
+            border: `1.5px solid ${COLORS.positive}44`,
+            borderRadius: 20,
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            maxHeight: 320
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <div style={{ fontSize: 18, fontWeight: 950, color: COLORS.positive }}>FINAL TRIPLET EXTRACTION</div>
+              <div style={{ fontSize: 10, color: COLORS.textMuted, fontWeight: 800 }}>✓ DECISION SYNCED</div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {[
+                { h: "(staff, very courteous, Pos)", d: "A: staff | O: courteous | Tag: [1,4]", c: COLORS.positive },
+                { h: "(food, terrible, Neg)", d: "A: food | O: terrible | Tag: [7,9]", c: COLORS.negative }
+              ].map((tri, i) => (
+                <div key={i} style={{ padding: '10px 14px', background: 'rgba(0,0,0,0.2)', borderRadius: 10, borderLeft: `4px solid ${tri.c}` }}>
+                  <div style={{ fontSize: 15, color: '#fff', fontWeight: 900 }}>{i + 1}. {tri.h}</div>
+                  <div style={{ fontSize: 10, color: COLORS.textMuted }}>{tri.d}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Dynamic Sentence Decoration Preview */}
+            <div style={{ marginTop: 12, padding: '16px', background: 'rgba(0,0,0,0.3)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ fontSize: 9, color: COLORS.textMuted, fontWeight: 900, marginBottom: 10, textAlign: 'center', textTransform: 'uppercase' }}>Decorated Sentence Preview</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', justifyContent: 'center' }}>
+                {WORDS.map((w, i) => {
+                  const isA = i === 1 || i === 7;
+                  const isO = i === 3 || i === 4 || i === 9;
+                  const color = isA ? COLORS.aspect : isO ? COLORS.opinion : COLORS.text;
+                  return (
+                    <span key={i} style={{
+                      fontSize: 12,
+                      color: color,
+                      fontWeight: (isA || isO) ? 900 : 400,
+                      borderBottom: (isA || isO) ? `2.5px solid ${color}66` : 'none',
+                      padding: '0 2px'
+                    }}>
+                      {w}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
     </AbsoluteFill>
   );
 };

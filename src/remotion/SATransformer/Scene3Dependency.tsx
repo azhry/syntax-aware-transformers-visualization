@@ -8,22 +8,43 @@ const e3 = (x: number) => 1 - Math.pow(1 - x, 3);
 const ap = (f: number, s: number, d: number) => e3(Math.min(Math.max((f - s) / d, 0), 1));
 
 // Simplified 6-word version for clarity
-const WORDS = ['staff', 'was₁', 'courteous', 'but', 'food', 'was₂', 'terrible'];
-const TYPES: string[] = ['a', 'n', 'o', 'c', 'a', 'n', 'o']; // aspect, noun/verb, opinion, conjunction
+const WORDS_DATA: { w: string; t: 'n' | 'a' | 'o' }[] = [
+  { w: 'The', t: 'n' }, { w: 'staff', t: 'a' }, { w: 'was', t: 'n' },
+  { w: 'very', t: 'o' }, { w: 'courteous', t: 'o' }, { w: 'but', t: 'n' },
+  { w: 'the', t: 'n' }, { w: 'food', t: 'a' }, { w: 'was', t: 'n' }, { w: 'terrible.', t: 'o' },
+];
+const WORDS = WORDS_DATA.map(d => d.w);
+const TYPES = WORDS_DATA.map(d => d.t);
 const N = WORDS.length;
 
 // Edges: [src, tgt, label], 0-indexed into WORDS
+// Following common dependency patterns for the sentence
 const EDGES: [number, number, string][] = [
-  [0, 1, 'nsubj'],    // staff → was₁
-  [2, 1, 'acomp'],    // courteous → was₁
-  [1, 5, 'conj'],     // was₁ → was₂  ← THE BRIDGE
-  [3, 5, 'cc'],       // but → was₂   ← Why it's adjacent!
-  [4, 5, 'nsubj'],    // food → was₂
-  [6, 5, 'acomp'],    // terrible → was₂
+  [0, 1, 'det'],      // The -> staff
+  [1, 2, 'nsubj'],    // staff -> was
+  [3, 4, 'advmod'],   // very -> courteous
+  [4, 2, 'acomp'],    // courteous -> was
+  [2, 8, 'conj'],     // was(2) -> was(8)
+  [5, 8, 'cc'],       // but -> was(8)
+  [6, 7, 'det'],      // the -> food
+  [7, 8, 'nsubj'],    // food -> was(8)
+  [9, 8, 'acomp'],    // terrible -> was(8)
+];
+
+const EXPLANATIONS = [
+  "'The' is a determiner (det) identifying 'staff'.",
+  "'staff' is the nominal subject (nsubj) of the verb 'was'.",
+  "'very' is an adverbial modifier (advmod) for 'courteous'.",
+  "'courteous' is the adjectival complement (acomp) of 'was'.",
+  "The conjunction connects the first clause to the second.",
+  "'but' is the coordinating conjunction (cc) for the structure.",
+  "'the' is the determiner (det) identifying 'food'.",
+  "'food' is the nominal subject (nsubj) of the second 'was'.",
+  "'terrible' is the adjectival complement (acomp) of 'was₂'.",
 ];
 
 const DEP_COLORS: Record<string, string> = {
-  nsubj: '#60a5fa', acomp: '#34d399', conj: '#f97316',
+  nsubj: '#60a5fa', acomp: '#34d399', conj: '#f97316', det: '#94a3b8', advmod: '#c084fc', cc: '#f472b6'
 };
 const wCol = (t: string) => t === 'a' ? COLORS.aspect : t === 'o' ? COLORS.opinion : COLORS.text;
 
@@ -39,34 +60,37 @@ export const Scene3Dependency: React.FC = () => {
   const f = useCurrentFrame();
 
   const titleOp = ap(f, 0, 12);
-  const nodeOp = (i: number) => ap(f, 8 + i * 5, 12);
-  const edgeOp = (i: number) => ap(f, 38 + i * 12, 14);
-  const matrixP = ap(f, 115, 15);
-  const cellOp = (r: number, c: number) => ap(f, 132 + (r * N + c) * 2.5, 10);
-  const formulaOp = ap(f, 200, 12);
+  const nodeOp = (i: number) => ap(f, 10 + i * 3, 10);
+  const edgeOp = (i: number) => ap(f, 45 + i * 12, 12);
+  const matrixP = ap(f, 130, 15);
+  const cellOp = (r: number, c: number) => {
+    // Regular cells appear with matrix
+    if (r === c) return matrixP;
+    // Find if there's an edge for this cell
+    const edgeIdx = EDGES.findIndex(([s, t]) => (s === r && t === c) || (s === c && t === r));
+    if (edgeIdx !== -1) {
+      // Cell appears when its edge appears
+      return edgeOp(edgeIdx);
+    }
+    return matrixP;
+  };
+  const formulaOp = ap(f, 210, 12);
 
-  // Tree layout: was nodes centered, others arranged around
-  // Use a proper hierarchical layout
-  //   was₁ (1) at top-center-left, was₂ (4) at top-center-right
-  //   staff(0) below-left of was₁, courteous(2) below-right of was₁
-  //   food(3) below-left of was₂, terrible(5) below-right of was₂
-  const WAS1 = { x: 220, y: 80 };
-  const WAS2 = { x: 650, y: 80 };
-  const POSITIONS: { x: number, y: number }[] = [
-    { x: 80, y: 500 },  // staff
-    WAS1,               // was₁
-    { x: 300, y: 500 }, // courteous
-    { x: 435, y: 400 }, // but
-    { x: 570, y: 500 }, // food
-    WAS2,               // was₂
-    { x: 790, y: 500 }, // terrible
-  ];
+  // Identify which edge is currently being "parsed"
+  const activeEdgeIdx = Math.floor((f - 40) / 12);
+  const curEdge = activeEdgeIdx >= 0 && activeEdgeIdx < EDGES.length ? EDGES[activeEdgeIdx] : null;
+  const parseProgress = ((f - 40) % 12) / 12;
+  const insightOp = ap(f, 35, 10);
 
-  const SVG_W = 740, SVG_H = 600;
+  const SVG_W = 860, SVG_H = 600;
+  const POSITIONS = WORDS.map((_, i) => ({
+    x: 40 + i * (SVG_W - 80) / (N - 1),
+    y: 520
+  }));
 
-  // CELL size for matrix — scaled to fit right panel
-  const CELL = 90;
-  const LABEL_W = 60;
+  // CELL size for matrix — scaled to fit 10x10
+  const CELL = 52;
+  const LABEL_W = 80;
 
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.background, padding: '36px 56px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 0 }}>
@@ -87,16 +111,17 @@ export const Scene3Dependency: React.FC = () => {
               const op = edgeOp(i);
               if (op < 0.01) return null;
               const p1 = POSITIONS[s], p2 = POSITIONS[t];
+              const dist = Math.abs(s - t);
               const mx = (p1.x + p2.x) / 2;
-              const my = ((p1.y + p2.y) / 2) - 30;
+              const my = p1.y - (dist * 45) - 20; // Arc height based on distance
               const col = DEP_COLORS[lbl] ?? '#888';
-              const isConj = lbl === 'conj';
-              const pathLen = Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2) * 1.8;
+              const isBridge = lbl === 'conj' || lbl === 'cc';
+              const pathLen = Math.abs(p2.x - p1.x) * 2;
               return (
                 <g key={i} opacity={op}>
                   <path
-                    d={`M${p1.x},${p1.y} Q${mx},${my} ${p2.x},${p2.y}`}
-                    fill="none" stroke={col} strokeWidth={isConj ? 4 : 2.5} strokeLinecap="round"
+                    d={`M${p1.x},${p1.y - 40} Q${mx},${my} ${p2.x},${p2.y - 40}`}
+                    fill="none" stroke={col} strokeWidth={isBridge ? 4 : 2.5} strokeLinecap="round"
                     strokeDasharray={`${op * pathLen} ${pathLen}`}
                   />
                   {op > 0.5 && (
@@ -108,13 +133,13 @@ export const Scene3Dependency: React.FC = () => {
                   )}
                   {/* Arrow tip */}
                   {op > 0.8 && (() => {
-                    const dx = p2.x - mx, dy = p2.y - my;
+                    const dx = p2.x - mx, dy = p2.y - 40 - my;
                     const angle = Math.atan2(dy, dx) * 180 / Math.PI;
                     return (
                       <polygon
-                        points={`${p2.x},${p2.y} ${p2.x - 10},${p2.y - 5} ${p2.x - 10},${p2.y + 5}`}
+                        points={`${p2.x},${p2.y - 40} ${p2.x - 10},${p2.y - 45} ${p2.x - 10},${p2.y - 35}`}
                         fill={col}
-                        transform={`rotate(${angle - 90}, ${p2.x}, ${p2.y})`}
+                        transform={`rotate(${angle - 90}, ${p2.x}, ${p2.y - 40})`}
                       />
                     );
                   })()}
@@ -127,21 +152,63 @@ export const Scene3Dependency: React.FC = () => {
               const op = nodeOp(i);
               const col = wCol(TYPES[i]);
               const pos = POSITIONS[i];
-              const isWas = word.startsWith('was');
+              const isKey = TYPES[i] !== 'n';
+
+              // Highlight if being scanned as child/head during parsing
+              const isChild = curEdge?.[0] === i;
+              const isHead = curEdge?.[1] === i;
+              const highlight = (isChild || isHead) && parseProgress > 0.1;
+
               return (
                 <g key={i} opacity={op} transform={`translate(${pos.x}, ${pos.y})`}>
-                  <ellipse cx={0} cy={0} rx={72} ry={72}
-                    fill={`${col}22`} stroke={col} strokeWidth={isWas ? 3 : 2}
-                    style={{ filter: isWas ? `drop-shadow(0 0 8px ${col})` : undefined }} />
-                  <text textAnchor="middle" dominantBaseline="middle" fill={col}
-                    fontSize={26} fontWeight={"bold"}>{word}</text>
-                  <text textAnchor="middle" y={32} fill={col} fontSize={20} opacity={0.7}>
-                    {TYPES[i] === 'a' ? 'aspect' : TYPES[i] === 'o' ? 'opinion' : ''}
-                  </text>
+                  <rect x={-40} y={-35} width={80} height={45} rx={8}
+                    fill={highlight ? `${col}44` : `${col}22`}
+                    stroke={highlight ? '#fff' : col}
+                    strokeWidth={highlight ? 4 : (isKey ? 3 : 1)}
+                    style={{
+                      filter: (isKey || highlight) ? `drop-shadow(0 0 12px ${highlight ? '#fff' : col}66)` : undefined,
+                      transition: 'all 0.2s ease-out'
+                    }} />
+                  <text textAnchor="middle" fill={highlight ? '#fff' : col}
+                    fontSize={20} fontWeight={isKey || highlight ? "bold" : "normal"}>{word}</text>
+
+                  {isChild && parseProgress > 0.1 && (
+                    <text y={25} textAnchor="middle" fill="#fff" fontSize={14} fontWeight="900" opacity={0.8}>CHILD</text>
+                  )}
+                  {isHead && parseProgress > 0.1 && (
+                    <text y={25} textAnchor="middle" fill="#fff" fontSize={14} fontWeight="900" opacity={0.8}>HEAD</text>
+                  )}
                 </g>
               );
             })}
           </svg>
+
+          {/* Linguistic Insight Panel */}
+          <div style={{
+            opacity: insightOp,
+            width: '100%',
+            background: `${COLORS.surface}CC`,
+            border: `2px solid ${COLORS.primary}44`,
+            borderRadius: 16,
+            padding: '20px 30px',
+            backdropFilter: 'blur(10px)',
+            marginTop: -60,
+            zIndex: 10,
+            position: 'relative'
+          }}>
+            <div style={{ color: COLORS.primaryLight, fontSize: 18, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
+              Linguistic Parsing Insight
+            </div>
+            <div style={{ fontSize: 24, minHeight: 70, display: 'flex', alignItems: 'center', color: '#fff' }}>
+              {activeEdgeIdx >= 0 && activeEdgeIdx < EXPLANATIONS.length ? (
+                <div style={{ animation: 'fadeIn 0.3s ease-out' }}>
+                  <span style={{ color: COLORS.primaryLight, fontWeight: 900 }}>Step {activeEdgeIdx + 1}:</span> {EXPLANATIONS[activeEdgeIdx]}
+                </div>
+              ) : (
+                <div style={{ color: COLORS.textMuted }}>Select a dependency node to see grammatical logic...</div>
+              )}
+            </div>
+          </div>
 
           {/* Formulas */}
           <div style={{ opacity: formulaOp, display: 'flex', gap: 20, marginTop: 4 }}>
@@ -161,9 +228,9 @@ export const Scene3Dependency: React.FC = () => {
         </div>
 
         {/* ── Right: Adjacency Matrix ── */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, justifyContent: 'center', alignItems: 'center', overflow: 'visible', paddingLeft: 100 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, justifyContent: 'center', alignItems: 'center', overflow: 'visible', paddingLeft: 60 }}>
           <div style={{ opacity: matrixP, fontSize: 32, fontWeight: 700, color: COLORS.primaryLight, marginBottom: 10 }}>
-            Adjacency Matrix A <span style={{ fontSize: 24, color: COLORS.textMuted, fontWeight: 400 }}>(6×6 key words)</span>
+            Adjacency Matrix A <span style={{ fontSize: 24, color: COLORS.textMuted, fontWeight: 400 }}>(10×10)</span>
           </div>
           <div style={{ opacity: matrixP, overflow: 'visible' }}>
             {/* Grid */}
@@ -172,12 +239,12 @@ export const Scene3Dependency: React.FC = () => {
               <div />
               {WORDS.map((w, c) => (
                 <div key={c} style={{
-                  fontSize: 24, color: wCol(TYPES[c]),
-                  textAlign: 'center', height: 70, display: 'flex',
-                  alignItems: 'flex-end', justifyContent: 'center', marginBottom: 18, paddingBottom: 12,
-                  transform: 'rotate(-30deg)', transformOrigin: 'bottom center',
+                  fontSize: 16, color: wCol(TYPES[c]),
+                  textAlign: 'center', height: 60, display: 'flex',
+                  alignItems: 'flex-end', justifyContent: 'center', marginBottom: 10, paddingBottom: 4,
+                  transform: 'rotate(-45deg)', transformOrigin: 'bottom center',
                   fontWeight: 700,
-                  marginLeft: 90,
+                  marginLeft: 55,
                 }}>
                   {w}
                 </div>
@@ -185,25 +252,29 @@ export const Scene3Dependency: React.FC = () => {
               {/* Data rows */}
               {WORDS.map((word, r) => (
                 <React.Fragment key={r}>
-                  <div style={{ fontSize: 24, color: wCol(TYPES[r]), display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 12, fontWeight: 700, overflow: 'visible' }}>
+                  <div style={{ fontSize: 16, color: wCol(TYPES[r]), display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 8, fontWeight: 700, overflow: 'visible' }}>
                     {word}
                   </div>
                   {WORDS.map((_, c) => {
                     const val = ADJ[r][c];
                     const op = cellOp(r, c);
-                    const isConj = (r === 1 && c === 4) || (r === 4 && c === 1);
-                    const bg = val === 1 ? (isConj ? `${COLORS.aspect}88` : r === c ? '#2d3748' : `${COLORS.primary}55`) : '#1e293b';
+                    const edgeIdx = EDGES.findIndex(([s, t]) => (s === r && t === c) || (s === c && t === r));
+                    const edge = edgeIdx !== -1 ? EDGES[edgeIdx] : null;
+                    const edgeLabel = edge ? edge[2] : null;
+
+                    const isDiagonal = r === c;
+                    const bg = val === 1 ? (edgeLabel === 'conj' ? `${COLORS.aspect}88` : isDiagonal ? '#2d3748' : `${COLORS.primary}55`) : '#1e293b';
                     return (
                       <div key={c} style={{
                         opacity: op,
-                        width: CELL, height: CELL - 8,
+                        width: CELL, height: CELL - 4,
                         background: bg,
-                        border: `1.5px solid ${val === 1 ? (isConj ? COLORS.aspect : COLORS.primary) : '#334155'}`,
+                        border: `1.5px solid ${val === 1 ? (edgeLabel ? DEP_COLORS[edgeLabel] : COLORS.primary) : '#334155'}`,
                         borderRadius: 4,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 28, fontWeight: val === 1 ? 700 : 400,
+                        fontSize: 20, fontWeight: val === 1 ? 700 : 400,
                         color: val === 1 ? '#fff' : COLORS.textMuted,
-                        boxShadow: isConj && val === 1 ? `0 0 12px ${COLORS.aspect}66` : 'none',
+                        boxShadow: edgeLabel && val === 1 ? `0 0 10px ${DEP_COLORS[edgeLabel]}66` : 'none',
                       }}>
                         {val}
                       </div>
@@ -213,8 +284,8 @@ export const Scene3Dependency: React.FC = () => {
               ))}
             </div>
 
-            <div style={{ marginTop: 10, padding: '8px 14px', background: `${COLORS.aspect}18`, border: `1px solid ${COLORS.aspect}44`, borderRadius: 8, fontSize: 24, color: COLORS.aspect, display: 'inline-block' }}>
-              ■ Orange = <strong>conj</strong> (was₁ ↔ was₂) & Purple = <strong>cc</strong> (but ↔ was₂)
+            <div style={{ marginTop: 10, padding: '8px 14px', background: `${COLORS.aspect}18`, border: `1px solid ${COLORS.aspect}44`, borderRadius: 8, fontSize: 18, color: COLORS.textMuted, display: 'inline-block' }}>
+              Syntactic dependencies map directly to the <strong>Adjacency Matrix A</strong>
             </div>
           </div>
         </div>

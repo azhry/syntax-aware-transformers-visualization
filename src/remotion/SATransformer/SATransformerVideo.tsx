@@ -15,14 +15,14 @@ import { Scene9Results } from './Scene9Results';
 // ~80 seconds total at 30fps = 2400 frames
 const DUR = {
   INTRO: { start: 0, d: 90 },  // 3s
-  ENCODER: { start: 90, d: 290 },  // 10s (Fast BiLSTM visualization - 10 frames per word)
+  ENCODER: { start: 90, d: 290 },  // 10s
   DEP: { start: 380, d: 240 },  // 8s
   AEA: { start: 620, d: 600 },  // 20s
-  LAYERS: { start: 1220, d: 600 },  // 20s (Extended to slow down calculations)
-  DIST: { start: 1820, d: 120 },  // 4s
-  INFER: { start: 1940, d: 210 },  // 7s
-  TRAIN: { start: 2150, d: 90 },   // 3s
-  RESULTS: { start: 2240, d: 120 }, // 4s 
+  LAYERS: { start: 1220, d: 600 },  // 20s
+  DIST: { start: 1820, d: 300 },  // 10s (increased for BFS and Assembly)
+  INFER: { start: 2120, d: 360 },  // 12s (increased for iterative refinement)
+  TRAIN: { start: 2480, d: 150 },   // 5s
+  RESULTS: { start: 2630, d: 270 }, // 9s 
 };
 
 const BG = '#020617';

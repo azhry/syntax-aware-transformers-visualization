@@ -9,7 +9,7 @@ export const RemotionRoot: React.FC = () => {
       <Composition
         id="SATransformerVideo"
         component={SATransformerVideo}
-        durationInFrames={2400}
+        durationInFrames={2900}
         fps={30}
         width={1920}
         height={1080}

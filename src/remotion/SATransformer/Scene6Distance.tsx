@@ -7,10 +7,9 @@ import { COLORS } from './types';
 const e3 = (x: number) => 1 - Math.pow(1 - x, 3);
 const ap = (f: number, s: number, d: number) => e3(Math.min(Math.max((f - s) / d, 0), 1));
 
-// Path: great(0) → courteous(1) → was₁(2) → was₂(3) → food(4) — 4 hops
-const PATH_WORDS = ['great', 'courteous', 'was₁', 'was₂', 'food'];
+const PATH_WORDS = ['very', 'courteous', 'was', 'was', 'food'];
 const PATH_TYPES: ('o' | 'n' | 'a')[] = ['o', 'o', 'n', 'n', 'a'];
-const PATH_LABELS = ['acomp', 'acomp', 'conj', 'nsubj'];
+const PATH_LABELS = ['advmod', 'acomp', 'conj', 'nsubj'];
 
 const wCol = (t: 'o' | 'n' | 'a') => t === 'a' ? COLORS.aspect : t === 'o' ? COLORS.opinion : COLORS.text;
 
@@ -18,105 +17,179 @@ export const Scene6Distance: React.FC = () => {
   const f = useCurrentFrame();
 
   const titleOp = ap(f, 0, 10);
-  // Animate hops one by one
-  const hopOp = (h: number) => ap(f, 8 + h * 10, 10);
-  const distOp = ap(f, 8 + 4 * 10 + 5, 12);
-  const formulaOp = ap(f, 52, 12);
-
-  const N = PATH_WORDS.length;
-  const NODE_SPACING = 220;
-  const SVG_W = 1100, SVG_H = 280;
-  const NODE_Y = 160;
+  // Phase 1: BFS Path Discovery (0s - 4s)
+  const bfsOp = (h: number) => ap(f, 10 + h * 20, 15);
+  // Phase 2: Embedding Lookup (4s - 6s)
+  const tableOp = ap(f, 90, 15);
+  const lookupOp = ap(f, 110, 12);
+  // Phase 3: Assembly (6s+)
+  const formulaOp = ap(f, 130, 12);
+  const assemblyOp = ap(f, 150, 15);
 
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.background, padding: '44px 100px', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: 24 }}>
       <div style={{ opacity: titleOp, fontSize: 48, fontWeight: 800, color: COLORS.primaryLight }}>Syntactic Relative Distance</div>
-      <div style={{ opacity: titleOp, fontSize: 22, color: COLORS.textMuted }}>How far are two words in the dependency tree?  Example: dist(<span style={{ color: COLORS.opinion }}>great</span>, <span style={{ color: COLORS.aspect }}>food</span>) = 4</div>
+      <div style={{ opacity: titleOp, fontSize: 22, color: COLORS.textMuted }}>Computation: Finding the shortest path in the dependency tree</div>
 
-      {/* Path SVG */}
-      <svg width={SVG_W} height={SVG_H} style={{ overflow: 'visible' }}>
-        {/* Edges / arrows */}
-        {PATH_LABELS.map((lbl, h) => {
-          const op = hopOp(h);
-          if (op < 0.01) return null;
-          const x1 = 80 + h * NODE_SPACING;
-          const x2 = 80 + (h + 1) * NODE_SPACING;
-          const mx = (x1 + x2) / 2;
-          const cy = NODE_Y - 70;
-          const len = NODE_SPACING * 1.4;
-          return (
-            <g key={h} opacity={op}>
-              <path d={`M${x1 + 40},${NODE_Y} Q${mx},${cy} ${x2 - 40},${NODE_Y}`}
-                fill="none" stroke={COLORS.primary} strokeWidth={3} strokeLinecap="round"
-                strokeDasharray={`${op * len} ${len}`} />
-              {op > 0.6 && (
-                <>
-                  {/* Arrowhead */}
-                  <polygon points={`${x2 - 40},${NODE_Y} ${x2 - 55},${NODE_Y - 8} ${x2 - 55},${NODE_Y + 8}`} fill={COLORS.primary} opacity={0.9} />
-                  <text x={mx} y={cy - 12} textAnchor="middle" fill={COLORS.primary} fontSize={16} fontWeight="bold"
-                    style={{ paintOrder: 'stroke', stroke: COLORS.background, strokeWidth: 5 }}>
-                    {lbl}
-                  </text>
-                  {/* Hop counter bubble */}
-                  <circle cx={mx} cy={cy - 40} r={18} fill={COLORS.primary} />
-                  <text x={mx} y={cy - 40} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize={15} fontWeight="bold">
-                    {h + 1}
-                  </text>
-                </>
-              )}
-            </g>
-          );
-        })}
-
-        {/* Nodes */}
-        {PATH_WORDS.map((word, i) => {
-          const op = ap(f, 4 + i * 2, 8);
-          const x = 80 + i * NODE_SPACING;
-          const col = wCol(PATH_TYPES[i]);
-          const isEnd = i === 0 || i === N - 1;
-          return (
-            <g key={i} opacity={op}>
-              <rect x={x - 48} y={NODE_Y - 26} width={96} height={52} rx={10}
-                fill={`${col}22`} stroke={col} strokeWidth={isEnd ? 3 : 1.5} />
-              <text x={x} y={NODE_Y} textAnchor="middle" dominantBaseline="middle"
-                fill={col} fontSize={20} fontWeight={isEnd ? 'bold' : '600'}>
-                {word}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* Distance label */}
-        {distOp > 0.1 && (
-          <g opacity={distOp}>
-            <line x1={80} y1={NODE_Y + 50} x2={80 + 4 * NODE_SPACING} y2={NODE_Y + 50}
-              stroke={COLORS.positive} strokeWidth={2} strokeDasharray="8,4" />
-            <line x1={80} y1={NODE_Y + 40} x2={80} y2={NODE_Y + 60} stroke={COLORS.positive} strokeWidth={2} />
-            <line x1={80 + 4 * NODE_SPACING} y1={NODE_Y + 40} x2={80 + 4 * NODE_SPACING} y2={NODE_Y + 60} stroke={COLORS.positive} strokeWidth={2} />
-            <text x={80 + 2 * NODE_SPACING} y={NODE_Y + 80} textAnchor="middle" fill={COLORS.positive} fontSize={26} fontWeight="bold">
-              dist = {Math.round(distOp * 4)} hops
-            </text>
-          </g>
-        )}
-      </svg>
-
-      {/* Formula */}
-      <div style={{ opacity: formulaOp, display: 'flex', gap: 32, marginTop: 8 }}>
-        <div style={{ flex: 1, background: COLORS.surface, borderRadius: 12, padding: '18px 28px', border: `1px solid ${COLORS.primaryLight}44` }}>
-          <div style={{ fontSize: 16, color: COLORS.textMuted, marginBottom: 8 }}>Word Pair Representation  (combines SA-Transformer output + syntactic distance)</div>
-          <BlockMath math="o_{ij} = [S^{(L)}_i : S^{(L)}_j : f^d(i, j)]" />
-        </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, justifyContent: 'center', fontSize: 20 }}>
-          {[
-            { t: 'S^{(L)}_i', d: 'SA-Transformer output for word i', c: COLORS.opinion },
-            { t: 'S^{(L)}_j', d: 'SA-Transformer output for word j', c: COLORS.aspect },
-            { t: 'f^d(i,j)', d: 'Syntactic distance embedding (dist=4)', c: COLORS.positive },
-          ].map((item, i) => (
-            <div key={i} style={{ opacity: ap(f, 54 + i * 5, 8), display: 'flex', gap: 12, alignItems: 'center' }}>
-              <span style={{ color: item.c, width: 72 }}><InlineMath math={item.t} /></span>
-              <span style={{ color: COLORS.textMuted, fontSize: 17 }}>— {item.d}</span>
+      {/* Row 1: BFS Discovery Process */}
+      <div style={{ display: 'flex', gap: 40, alignItems: 'center', height: 400 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: COLORS.textMuted }}>1. SHORTEST PATH SEARCH (BFS)</div>
+          <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: 20, padding: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ fontSize: 13, fontFamily: 'JetBrains Mono', color: COLORS.textMuted, lineHeight: 1.6 }}>
+              {PATH_WORDS.map((w, i) => {
+                if (i === 0) return <div key={i} style={{ color: COLORS.primaryLight }}>[START] x3: very</div>;
+                const op = bfsOp(i - 1);
+                if (op < 0.1) return null;
+                return (
+                  <div key={i} style={{ opacity: op }}>
+                    <span style={{ color: COLORS.textMuted }}>[Hop {i}]</span> Search → <span style={{ color: COLORS.positive }}>{w}</span>
+                    <span style={{ color: COLORS.textMuted, fontSize: 11 }}> (via {PATH_LABELS[i - 1]})</span>
+                  </div>
+                );
+              })}
+              {bfsOp(3) > 0.9 && <div style={{ marginTop: 12, fontSize: 18, color: COLORS.positive, fontWeight: 900 }}>✓ PATH FOUND: dist(3, 7) = 4</div>}
             </div>
-          ))}
+          </div>
+        </div>
+
+        <div style={{ flex: 2.5, position: 'relative' }}>
+          <svg width={800} height={300} style={{ overflow: 'visible' }}>
+            {/* Hops */}
+            {PATH_LABELS.map((lbl, h) => {
+              const op = bfsOp(h);
+              const x1 = 60 + h * 160;
+              const x2 = 60 + (h + 1) * 160;
+              const mx = (x1 + x2) / 2;
+              const cy = 100 - 50;
+              return (
+                <g key={h} style={{ opacity: op }}>
+                  <path d={`M${x1 + 35},100 Q${mx},${cy} ${x2 - 35},100`}
+                    fill="none" stroke={COLORS.primary} strokeWidth={3} strokeDasharray="5,3" />
+                  {op > 0.8 && <text x={mx} y={cy - 10} textAnchor="middle" fill={COLORS.primary} fontSize={14} fontWeight="900">{lbl}</text>}
+                  {op > 0.9 && (
+                    <circle cx={mx} cy={cy - 30} r={14} fill={COLORS.primary} />
+                  )}
+                  {op > 0.9 && <text x={mx} y={cy - 30} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize={11} fontWeight="900">+{h + 1}</text>}
+                </g>
+              );
+            })}
+
+            {/* Nodes */}
+            {PATH_WORDS.map((word, i) => {
+              const op = i === 0 ? 1 : bfsOp(i - 1);
+              const x = 60 + i * 160;
+              const col = wCol(PATH_TYPES[i]);
+              const isTarget = i === 4;
+              return (
+                <g key={i} style={{ opacity: op }}>
+                  <rect x={x - 40} y={100 - 22} width={80} height={44} rx={8}
+                    fill={isTarget && op > 0.9 ? COLORS.positive : `${col}22`} stroke={isTarget && op > 0.9 ? COLORS.positive : col} strokeWidth={2} />
+                  <text x={x} y={100} textAnchor="middle" dominantBaseline="middle" fill={isTarget && op > 0.9 ? "#000" : col} fontSize={14} fontWeight="900">{word}</text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      </div>
+
+      {/* Row 2: Distance Embedding Table Lookup */}
+      <div style={{ display: 'flex', gap: 40, marginTop: 20 }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16, opacity: tableOp }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: COLORS.textMuted }}>2. EMBEDDING LOOKUP: E_dist[4]</div>
+          <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 20, padding: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: 10 }}>
+              {[1, 2, 3, 4, 5].map(d => {
+                const isMatch = d === 4;
+                const active = isMatch && lookupOp > 0.5;
+                return (
+                  <React.Fragment key={d}>
+                    <div style={{ fontSize: 16, color: active ? COLORS.positive : COLORS.textMuted, fontWeight: active ? 900 : 400 }}>Index {d}</div>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {[0.12, -0.44, 0.82, 0.19].map((v, i) => (
+                        <div key={i} style={{
+                          flex: 1, height: 20, borderRadius: 4,
+                          background: active ? COLORS.positive : 'rgba(255,255,255,0.05)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 9, color: active ? '#000' : 'transparent', fontWeight: 900,
+                          transition: 'all 0.4s ease'
+                        }}>{v}</div>
+                      ))}
+                    </div>
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3: Vector Composition */}
+        <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 16, opacity: assemblyOp }}>
+          <div style={{ fontSize: 24, fontWeight: 900, color: COLORS.textMuted }}>3. FINAL ASSEMBLY (o_ij)</div>
+          <div style={{ background: COLORS.surface, borderRadius: 24, padding: '32px', border: `2px solid ${COLORS.primaryLight}22` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: COLORS.opinion, fontWeight: 900, marginBottom: 8 }}>S_very</div>
+                <div style={{ background: COLORS.opinion, borderRadius: 8, padding: '10px 0', position: 'relative' }}>
+                  {/* Origin Label */}
+                  <div style={{ position: 'absolute', bottom: '100%', left: 0, width: '100%', fontSize: 9, color: COLORS.textMuted, marginBottom: 12, fontStyle: 'italic' }}>From SA-Transformer L-Layer output</div>
+
+                  <div style={{ display: 'flex', gap: 2, padding: '0 4px' }}>
+                    {[0.33, -0.1, 0.92, 0.4].map((v, i) => (
+                      <div key={i} style={{ flex: 1, fontSize: 10, color: '#000', fontWeight: 900, textAlign: 'center' }}>{v}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div style={{ color: COLORS.textMuted, fontWeight: 900 }}>:</div>
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: COLORS.aspect, fontWeight: 900, marginBottom: 8 }}>S_food</div>
+                <div style={{ background: COLORS.aspect, borderRadius: 8, padding: '10px 0', position: 'relative' }}>
+                  {/* Origin Label */}
+                  <div style={{ position: 'absolute', bottom: '100%', left: 0, width: '100%', fontSize: 9, color: COLORS.textMuted, marginBottom: 12, fontStyle: 'italic' }}>From SA-Transformer L-Layer output</div>
+
+                  <div style={{ display: 'flex', gap: 2, padding: '0 4px' }}>
+                    {[0.12, 0.88, -0.2, 0.7].map((v, i) => (
+                      <div key={i} style={{ flex: 1, fontSize: 10, color: '#000', fontWeight: 900, textAlign: 'center' }}>{v}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div style={{ color: COLORS.textMuted, fontWeight: 900 }}>:</div>
+              <div style={{ flex: 1, textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: COLORS.positive, fontWeight: 900, marginBottom: 8 }}>f^d[4]</div>
+                <div style={{ background: COLORS.positive, borderRadius: 8, padding: '10px 0', position: 'relative' }}>
+                  {/* Origin Label */}
+                  <div style={{ position: 'absolute', bottom: '100%', left: 0, width: '100%', fontSize: 9, color: COLORS.textMuted, marginBottom: 12, fontStyle: 'italic' }}>From Distance Embedding Table Entry #4</div>
+
+                  <div style={{ display: 'flex', gap: 2, padding: '0 4px' }}>
+                    {[0.12, -0.44, 0.82, 0.19].map((v, i) => (
+                      <div key={i} style={{ flex: 1, fontSize: 10, color: '#000', fontWeight: 900, textAlign: 'center' }}>{v}</div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div style={{ fontSize: 24, color: COLORS.textMuted, margin: '0 10px' }}>→</div>
+              <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ height: 60, background: 'rgba(255,255,255,0.05)', borderRadius: 10, display: 'flex', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div style={{ flex: 1.2, background: COLORS.opinion, opacity: 0.9, position: 'relative' }}>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#000' }}>[S_i]</div>
+                  </div>
+                  <div style={{ flex: 1.2, background: COLORS.aspect, opacity: 0.9, position: 'relative' }}>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#000' }}>[S_j]</div>
+                  </div>
+                  <div style={{ flex: 1, background: COLORS.positive, opacity: 0.9, position: 'relative' }}>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#000' }}>[f^d]</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: 12, color: COLORS.textMuted, textAlign: 'center' }}>Final Pair Representation (Concatenated)</div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 32, opacity: formulaOp }}>
+              <BlockMath math="o_{very,food} = [S^{(L)}_{very} \parallel S^{(L)}_{food} \parallel E_{dist}[4]]" />
+            </div>
+          </div>
         </div>
       </div>
     </AbsoluteFill>

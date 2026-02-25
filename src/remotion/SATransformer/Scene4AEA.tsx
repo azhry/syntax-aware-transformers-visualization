@@ -119,13 +119,13 @@ function SubB({ f }: { f: number }) {
                 <div style={{ fontSize: 20, color: COLORS.textMuted, fontWeight: 800 }}>RELATIONSHIP MATRIX R (Fragment)</div>
                 <div style={{ fontSize: 14, color: COLORS.aspect, background: `${COLORS.aspect}22`, padding: '4px 12px', borderRadius: 6, border: `1px solid ${COLORS.aspect}44`, fontWeight: 800 }}>● EXTERNAL PARSER INPUT</div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12, textAlign: 'center', fontFamily: 'JetBrains Mono' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(11, 1fr)', gap: 12, textAlign: 'center', fontFamily: 'JetBrains Mono' }}>
                 {/* Header */}
-                <div />{[0, 1, 2, 3, 4, 5].map(x => <div key={x} style={{ fontSize: 20, color: COLORS.textMuted }}>x{x}</div>)}
+                <div />{[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(x => <div key={x} style={{ fontSize: 20, color: COLORS.textMuted }}>x{x}</div>)}
 
                 {/* Row for x2 (was1) */}
                 <div style={{ fontSize: 20, color: COLORS.textMuted }}>x2</div>
-                {['—', '—', '—', '—', '—', '—', '—', 'conj'].map((v, i) => {
+                {['—', '—', '—', '—', '—', '—', '—', '—', 'conj', '—'].map((v, i) => {
                   const active = v === 'conj';
                   return (
                     <div key={i} style={{
@@ -146,7 +146,7 @@ function SubB({ f }: { f: number }) {
                 })}
               </div>
               <div style={{ marginTop: 24, fontSize: 26, color: COLORS.textMuted, textAlign: 'center', fontWeight: 600 }}>
-                Coordinate <span style={{ color: COLORS.aspect }}>(2, 7)</span> results in type <span style={{ color: DEP_COLORS.conj, fontWeight: 900 }}>"conj"</span>
+                Coordinate <span style={{ color: COLORS.aspect }}>(2, 8)</span> results in type <span style={{ color: DEP_COLORS.conj, fontWeight: 900 }}>"conj"</span>
               </div>
             </div>
 
@@ -274,17 +274,17 @@ function SubC({ f }: { f: number }) {
                 </div>
                 {/* Data Rows */}
                 {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(rowIdx => {
-                  const isScanningRow = (rowIdx === 2 && f > 35 && f < 65) || (rowIdx === 7 && f > 65 && f < 95);
-                  const rowColor = rowIdx === 2 ? COLORS.primaryLight : rowIdx === 7 ? '#a78bfa' : COLORS.textMuted;
-                  const rowValues = rowIdx === 2 ? [0, 1, 0, 1, 1, 0, 0, 0, 0, 0] : rowIdx === 7 ? [0, 0, 0, 0, 0, 0, 1, 0, 1, 0] : Array(10).fill(0).map(() => Math.random() > 0.8 ? 1 : 0);
+                  const isScanningRow = (rowIdx === 2 && f > 35 && f < 65) || (rowIdx === 8 && f > 65 && f < 95);
+                  const rowColor = rowIdx === 2 ? COLORS.primaryLight : rowIdx === 8 ? '#a78bfa' : COLORS.textMuted;
+                  const rowValues = rowIdx === 2 ? [0, 1, 0, 0, 1, 0, 0, 0, 1, 0] : rowIdx === 8 ? [0, 0, 1, 0, 0, 1, 0, 1, 0, 1] : Array(10).fill(0).map(() => Math.random() > 0.8 ? 1 : 0);
 
                   return (
-                    <div key={rowIdx} style={{ display: 'flex', gap: 6, alignItems: 'center', position: 'relative', height: 20, opacity: isScanningRow ? 1 : (rowIdx === 2 || rowIdx === 7 ? 0.7 : 0.15), transition: 'opacity 0.3s ease' }}>
+                    <div key={rowIdx} style={{ display: 'flex', gap: 6, alignItems: 'center', position: 'relative', height: 20, opacity: isScanningRow ? 1 : (rowIdx === 2 || rowIdx === 8 ? 0.7 : 0.15), transition: 'opacity 0.3s ease' }}>
                       {/* Robust row-bounded highlight */}
                       {isScanningRow && <div style={{ position: 'absolute', inset: '-2px -8px', background: `${rowColor}44`, borderRadius: 6, border: `2px solid ${rowColor}88`, zIndex: 0, boxShadow: `0 0 15px ${rowColor}33` }} />}
 
                       <div style={{ width: 85, fontSize: 10, color: rowColor, fontWeight: isScanningRow ? 900 : 400, zIndex: 1 }}>
-                        {rowIdx === 2 ? 'x2 (was₁)' : rowIdx === 7 ? 'x7 (was₂)' : `x${rowIdx}`}
+                        {rowIdx === 2 ? 'x2 (was₁)' : rowIdx === 8 ? 'x8 (was₂)' : `x${rowIdx}`}
                       </div>
                       <div style={{ display: 'flex', gap: 4, zIndex: 1 }}>
                         {rowValues.map((v, colIdx) => (
@@ -313,8 +313,8 @@ function SubC({ f }: { f: number }) {
             <div style={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: 10, paddingLeft: 12 }}>
               <div style={{ fontSize: 14, color: COLORS.aspect, fontWeight: 900 }}>DISCOVERY LOG:</div>
               <div style={{ fontSize: 15, fontFamily: 'JetBrains Mono', color: COLORS.textMuted }}>
-                {f > 35 && <div><span style={{ color: COLORS.primaryLight }}>[1]</span> Scan x₂: staff, courteous, but</div>}
-                {f > 65 && <div style={{ marginTop: 6 }}><span style={{ color: '#a78bfa' }}>[2]</span> Scan x₇: food, terrible</div>}
+                {f > 35 && <div><span style={{ color: COLORS.primaryLight }}>[1]</span> Scan x₂: staff, courteous</div>}
+                {f > 65 && <div style={{ marginTop: 6 }}><span style={{ color: '#a78bfa' }}>[2]</span> Scan x₈: but, food, terrible</div>}
               </div>
             </div>
           </div>
@@ -330,9 +330,8 @@ function SubC({ f }: { f: number }) {
 
               {/* Neighbors for was₁ (x₂) */}
               {[
-                { x: 150, y: 150, lbl: 'nsubj', word: 'staff', id: 0 },
+                { x: 150, y: 150, lbl: 'nsubj', word: 'staff', id: 1 },
                 { x: 100, y: 300, lbl: 'acomp', word: 'courteous', id: 4 },
-                { x: 150, y: 450, lbl: 'cc', word: 'but', id: 5 },
               ].map((n, i) => {
                 const stepOp = ap(f, 40 + i * 10, 10);
                 const isScanning = f > 35 && f < 55;
@@ -352,10 +351,11 @@ function SubC({ f }: { f: number }) {
                 );
               })}
 
-              {/* Neighbors for was₂ (x₇) */}
+              {/* Neighbors for was₂ (x₈) */}
               {[
-                { x: 850, y: 200, lbl: 'nsubj', word: 'food', id: 8 },
-                { x: 850, y: 400, lbl: 'acomp', word: 'terrible', id: 9 },
+                { x: 850, y: 150, lbl: 'cc', word: 'but', id: 5 },
+                { x: 900, y: 300, lbl: 'nsubj', word: 'food', id: 7 },
+                { x: 850, y: 450, lbl: 'acomp', word: 'terrible', id: 9 },
               ].map((n, i) => {
                 const stepOp = ap(f, 65 + i * 10, 10);
                 const isScanning = f > 60 && f < 80;
@@ -376,7 +376,7 @@ function SubC({ f }: { f: number }) {
               })}
 
               {/* Main Target Edge Connection */}
-              <line x1={400} y1={300} x2={600} y2={300} stroke={COLORS.aspect} strokeWidth="6" markerEnd="url(#arrowhead)" style={{ opacity: ap(f, 20, 15) }} />
+              <line x1={400} y1={300} x2={600} y2={300} stroke={COLORS.aspect} strokeWidth="6" markerEnd="url(#arrowhead-main)" style={{ opacity: ap(f, 20, 15) }} />
               <text x={500} y={280} textAnchor="middle" fill={COLORS.aspect} fontSize="24" fontWeight="900" style={{ opacity: ap(f, 20, 15) }}>conj</text>
 
               {/* was1 and was2 nodes */}
@@ -389,7 +389,7 @@ function SubC({ f }: { f: number }) {
               <g style={{ opacity: ap(f, 10, 15) }}>
                 <circle cx={600} cy={300} r={70} fill={COLORS.surface} stroke="#a78bfa" strokeWidth="4" />
                 <text x={600} y={305} textAnchor="middle" fill="#fff" fontSize="24" fontWeight="900">was₂</text>
-                <text x={600} y={345} textAnchor="middle" fill="#a78bfa" fontSize="14" fontWeight="800">TAIL (x₇)</text>
+                <text x={600} y={345} textAnchor="middle" fill="#a78bfa" fontSize="14" fontWeight="800">TAIL (x₈)</text>
               </g>
             </svg>
 
@@ -397,14 +397,14 @@ function SubC({ f }: { f: number }) {
             <div style={{ position: 'absolute', left: 40, top: 20, width: 220, opacity: ap(f, 45, 15) }}>
               <div style={{ fontSize: 12, color: COLORS.primaryLight, marginBottom: 4, fontWeight: 800 }}>V1 PRE-CONTEXT:</div>
               <div style={{ fontSize: 11, color: COLORS.textMuted, background: 'rgba(0,0,0,0.6)', padding: '6px 12px', borderRadius: 6, border: `1px solid ${COLORS.primaryLight}33` }}>
-                &#123; staff, courteous, but &#125;
+                &#123; staff, courteous &#125;
               </div>
             </div>
 
             <div style={{ position: 'absolute', right: 40, top: 20, width: 220, opacity: ap(f, 55, 15), textAlign: 'right' }}>
               <div style={{ fontSize: 12, color: '#a78bfa', marginBottom: 4, fontWeight: 800 }}>V2 POST-CONTEXT:</div>
               <div style={{ fontSize: 11, color: COLORS.textMuted, background: 'rgba(0,0,0,0.6)', padding: '6px 12px', borderRadius: 6, border: '1px solid #a78bfa33' }}>
-                &#123; food, terrible &#125;
+                &#123; but, food, terrible &#125;
               </div>
             </div>
           </div>
@@ -433,9 +433,9 @@ function SubC({ f }: { f: number }) {
           </div>
 
           {[
-            { label: 'Step 1: Row Scan', math: 'A_{2,:} \\to \\mathcal{E}^2 = \\{ x_1, x_3, x_4 \\}', color: COLORS.primaryLight },
-            { label: 'Step 2: Row Scan', math: 'A_{7,:} \\to \\mathcal{E}^7 = \\{ x_6, x_8 \\}', color: '#a78bfa' },
-            { label: 'Divergence Check', math: '\\mathcal{E}^2 \\neq \\mathcal{E}^7 \\implies \\text{Context Distillation}', color: COLORS.aspect },
+            { label: 'Step 1: Row Scan', math: 'A_{2,:} \\to \\mathcal{E}^2 = \\{ x_1, x_4 \\}', color: COLORS.primaryLight },
+            { label: 'Step 2: Row Scan', math: 'A_{8,:} \\to \\mathcal{E}^8 = \\{ x_5, x_7, x_9 \\}', color: '#a78bfa' },
+            { label: 'Divergence Check', math: '\\mathcal{E}^2 \\neq \\mathcal{E}^8 \\implies \\text{Context Distillation}', color: COLORS.aspect },
             { label: 'Final State', math: '\\text{Result: Distinct identities for "conj"}', color: COLORS.positive },
           ].map((fo, i) => {
             const op = formulaOp(i);
@@ -489,8 +489,8 @@ function SubC({ f }: { f: number }) {
 /* ---------- 4d: Attention Mechanism ---------- */
 function SubD({ f }: { f: number }) {
   const labels = ['staff', 'courteous', 'but', 'food', 'terrible'];
-  const barColors = labels.map(l => (['staff', 'courteous', 'but'].includes(l) ? COLORS.primaryLight : '#a78bfa'));
-  const softmax = [0.05, 0.35, 0.30, 0.15, 0.10]; // staff, courteous, but, food, terrible
+  const barColors = labels.map(l => (['staff', 'courteous'].includes(l) ? COLORS.primaryLight : '#a78bfa'));
+  const softmax = [0.10, 0.45, 0.20, 0.15, 0.10]; // staff, courteous, but, food, terrible
 
   // stepIdx: 0 to 3
   const DURATION = 150;
@@ -713,7 +713,7 @@ function SubD({ f }: { f: number }) {
               background: 'rgba(0,0,0,0.7)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)',
               fontSize: 11, color: COLORS.textMuted, lineHeight: 1.4, opacity: ap(f, 20, 20)
             }}>
-              <strong style={{ color: COLORS.primaryLight }}>Edge {`e2,7`}</strong> looks at its neighbors to see what "kind" of conjunction it is. It finds that <strong>courteous</strong> provides missing sentiment data, making this edge unique.
+              <strong style={{ color: COLORS.primaryLight }}>Edge {`e2,8`}</strong> looks at its neighbors to see what "kind" of conjunction it is. It finds that <strong>courteous</strong> provides missing sentiment data, making this edge unique.
             </div>
           </div>
 
