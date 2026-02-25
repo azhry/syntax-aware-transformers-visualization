@@ -1,138 +1,69 @@
-# Remotion Prompt to Motion Graphics
+# Syntax-Aware Transformer Visualization 🎥
 
 <p align="center">
-  <a href="https://github.com/remotion-dev/logo">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-dark.apng">
-      <img alt="Animated Remotion Logo" src="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-light.gif">
-    </picture>
-  </a>
+  <img src="https://img.shields.io/badge/Rendered_with-Remotion-blue?style=for-the-badge&logo=remotion" alt="Remotion" />
+  <img src="https://img.shields.io/badge/Context-Adjacent_Edge_Attention-orange?style=for-the-badge" alt="AEA" />
 </p>
 
-AI-powered motion graphics generator that transforms natural language prompts into Remotion code.
+This project provides a cinematic, step-by-step visualization of the **Syntax-Aware Transformer (SAT)** architecture, specifically focusing on the **Adjacent Edge Attention (AEA)** mechanism.
 
-## Architecture
+The visualization explores how transformers can evolve from "sequential-blind" models into "syntax-aware" extractors by leveraging dependency trees to break mathematical symmetry between identical tokens.
 
-```
-User Prompt → Validation → Skill Detection → Code Generation → Sanitization → Live Preview
-```
+## 📺 Result Preview
 
-## How It Works
+<p align="center">
+  <video src="./out/SATransformerVideo.mp4" controls width="100%" style="max-width: 800px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.5);"></video>
+</p>
 
-### 1. Validation
+> **Full Video Download**: [`out/SATransformerVideo.mp4`](./out/SATransformerVideo.mp4)
 
-Before expensive model calls, a lightweight classifier determines if the prompt describes valid motion graphics content.
+## 🧠 Key Scientific Concepts Visualized
 
-**Accepted**: animated text, data visualizations, UI animations, social media content, abstract motion graphics
+### 1. Symmetry Breaking (The Problem)
+One of the biggest challenges in Aspect-Based Sentiment Triplet Extraction (ASTE) is when two clauses have identical structure (e.g., *"The staff was courteous but the food was terrible"*). Initial embeddings for "was₁" and "was₂" are often 100% identical, making relation extraction ambiguous.
 
-**Rejected**: questions, conversational requests, non-visual tasks
+### 2. Adjacent Edge Attention (AEA)
+The video breaks down the **Root of the Universe** calculation:
+- **Projection**: Extracting "meaning-seeking" features (Query, Key, Value).
+- **Scoring**: Mathematical Dot-Product measuring the "fit" between an edge and its neighbors.
+- **Neural Audit Scoreboard**: A literal trace of how importance (α weights) is distributed across neighbors (e.g., *staff*, *courteous*, *but*).
+- **Aggregation**: Blending contextual "essence" into the edge representation to create a unique, refined vector.
 
-### 2. Skill Detection
+### 3. Deep Trace Calculation
+The README math matches the video's terminal-style computation traces:
+- **Query $\vec{q}$** vs **Key $\vec{k}$** dot products.
+- **Softmax** normalization with explicit denominators.
+- **Symmetry Resolution**: Proving how unique neighborhoods result in $>40\%$ difference in finalized weights.
 
-The system analyzes the prompt to identify which **skills** are relevant. Skills are modular knowledge units that provide domain-specific guidance to the code generation model.
+## 🛠️ Commands
 
-There are two types of skills:
-
-- **Guidance Skills** - Pattern libraries with best practices for specific domains (charts, typography, transitions, etc.)
-- **Example Skills** - Complete working code references that demonstrate specific animation patterns
-
-This approach keeps the base prompt lightweight while dynamically injecting only the relevant expertise for each request.
-
-### 3. Code Generation
-
-Uses a one-shot prompt with the base Remotion knowledge plus any detected skills. The generated code follows these principles:
-
-- **Constants-first design** - All text, colors, and timing values are declared as editable constants at the top
-- **Aesthetic defaults** - Guidance on visual polish, spacing, and animation feel
-- **Crossfade patterns** - Smooth state transitions without layout jumps
-- **Spring physics** - Natural, organic motion using Remotion's spring() function
-
-### 4. Sanitization & Compilation
-
-The response is cleaned (removing markdown wrappers and trailing commentary), then compiled in-browser using Babel. The compiled component renders directly in the Remotion Preview with all necessary APIs injected.
-
-## Skills System
-
-Skills enable contextual expertise without bloating every prompt. Located in `src/skills/`:
-
-### Guidance Skills
-
-| Skill              | Purpose                                                                                 |
-| ------------------ | --------------------------------------------------------------------------------------- |
-| **charts**         | Data visualization patterns - bar charts, pie charts, axis labels, staggered animations |
-| **typography**     | Kinetic text - typewriter effects, word carousels, text highlights                      |
-| **messaging**      | Chat UI - bubble layouts, WhatsApp/iMessage styling, staggered entrances                |
-| **transitions**    | Scene changes - TransitionSeries, fade/slide/wipe effects                               |
-| **sequencing**     | Timing control - Sequence, Series, staggered delays                                     |
-| **spring-physics** | Organic motion - spring configs, bounce effects, chained animations                     |
-| **social-media**   | Platform-specific formats - aspect ratios, safe zones                                   |
-| **3d**             | Three.js integration - 3D scenes, camera setup                                          |
-
-### Example Skills (Code Snippets)
-
-Example skills provide complete working references (histogram, chat messages, typewriter effects, etc.) that demonstrate these patterns in action. We think of them like implementation archetypes that can be used and adjusted for the user prompt.
-
-## Usage Tips
-
-**Prompting best practices:**
-
-- Be specific about colors, timing, and layout ("green sent bubbles on the right, gray received on the left")
-- Include data directly in the prompt for charts and visualizations
-- Describe the animation feel you want ("bouncy spring entrance", "smooth fade", "staggered timing")
-
-**Images:**
-
-- Direct image uploads are not supported
-- Reference images via URL - the generated code will use Remotion's `<Img>` component
-- Example: _"Create a DVD screensaver animation of this image https://example.com/logo.png"_
-
-**What works well:**
-
-- Kinetic typography and text animations
-- Data visualizations with animated entrances
-- Chat/messaging UI mockups
-- Social media content (Stories, Reels, TikTok)
-- Logo animations and brand intros
-- Abstract motion graphics
-
-## Commands
-
-**Install Dependencies**
-
-```console
-npm i
+### 1. Install Dependencies
+```bash
+npm install
 ```
 
-**Start Preview**
-
-```console
-npm run dev
+### 2. Start Live Preview
+```bash
+npm run remotion
 ```
 
-**Render video**
-
-```console
+### 3. Render Final Video
+```bash
 npx remotion render
 ```
 
-**Upgrade Remotion**
+## 🏗️ Project Structure
 
-```console
-npx remotion upgrade
-```
+- `src/remotion/SATransformer/`: Core visualization logic.
+  - `Scene2Encoder.tsx`: Showing the initial token blind-spots.
+  - `Scene3Dependency.tsx`: Mapping the 7-word dependency graph.
+  - `Scene4AEA.tsx`: The "Main Event" — Step-by-step Attention mechanics.
+- `out/`: Contains the latest rendered build.
+- `plans/`: Detailed implementation spec for the mathematical steps.
 
-## Docs
+## 📜 Academic Reference
+This visualization is based on the paper:  
+*"Encoding Syntactic Information into Transformers for Aspect-Based Sentiment Triplet Extraction"*
 
-Get started with Remotion by reading the [fundamentals page](https://www.remotion.dev/docs/the-fundamentals).
-
-## Help
-
-We provide help on our [Discord server](https://discord.gg/6VzzNDwUwV).
-
-## Issues
-
-Found an issue with Remotion? [File an issue here](https://github.com/remotion-dev/remotion/issues/new).
-
-## License
-
-Note that for some entities a company license is needed. [Read the terms here](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
+---
+Built with 🥃 and **Remotion** by [Lyrid](https://github.com/azhry)
